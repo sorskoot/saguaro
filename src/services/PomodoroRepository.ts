@@ -4,11 +4,26 @@ import type { PomodoroSession } from '../types';
 
 const SESSIONS_KEY = 'pomodoro_sessions';
 
+interface StoredPomodoroSession extends Omit<PomodoroSession, 'taskId'> {
+  taskId?: string | null;
+  projectId?: string | null;
+}
+
 export class PomodoroRepository implements IRepository<PomodoroSession> {
   constructor(private readonly storage: IStorageService) {}
 
   private load(): PomodoroSession[] {
-    return this.storage.get<PomodoroSession[]>(SESSIONS_KEY) ?? [];
+    const stored = this.storage.get<StoredPomodoroSession[]>(SESSIONS_KEY) ?? [];
+    const needsMigration = stored.some(
+      (session) => session.projectId !== undefined || session.taskId === undefined,
+    );
+    const sessions = stored.map(({ projectId, ...session }) => ({
+      ...session,
+      taskId: session.taskId ?? projectId ?? null,
+    }));
+
+    if (needsMigration) this.persist(sessions);
+    return sessions;
   }
 
   private persist(sessions: PomodoroSession[]): void {

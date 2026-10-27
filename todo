@@ -1,0 +1,20 @@
+TODO:
+    General:
+        ✓ Rename Projects to Tasks. In pomodoro you work on a Task for a number of Pomodoros. @done(26-10-27 21:11)
+        ☐ Add functionality to select a task in the Tasks tab and that task becomes the active task. This task is selected in the Timer view too. When adding a new task, that task is selected.
+        ☐ Assign a number of Pomodoros to each task.
+        ☐ Visualize the number of Pomodoros assigned to a task on the timer view as the little circles.
+        ☐ Add more circles if more pomodoros are needed when working on a task. Give these a different color.
+        ☐ Add a button to note when an interuption occurs.
+        ☐ A Pomodoro should be pausable. When it's started and you hit 'pause', it should ask if you are sure and then end the pomodoro. When the pomodoro ends, it is counted.
+
+    History:
+        ☐ Record the number of Pomodoros completed for each task.
+        ☐ Record interruptions for each task.
+
+    Tasks:
+        ☐ Add an optional description for a task.
+        ☐ Add an optional link to a tasks. So a task can be linked to an issue on GitHub.
+
+
+

@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
 import { usePomodoros } from '../hooks/usePomodoros';
-import { useProjects } from '../hooks/useProjects';
+import { useTasks } from '../hooks/useTasks';
 import { SessionItem, DailySummary } from '../components/History';
 import { isSameDay } from '../utils/time';
 import type { PomodoroSession } from '../types';
 import styles from './HistoryPage.module.css';
 
-type FilterMode = 'all' | 'work' | string; // string = projectId
+type FilterMode = 'all' | 'work' | string;
 
 interface DayGroup {
   dateIso: string;
@@ -33,23 +33,21 @@ function groupByDay(sessions: PomodoroSession[]): DayGroup[] {
 
 export default function HistoryPage() {
   const { sessions } = usePomodoros();
-  const { projects } = useProjects();
+  const { tasks } = useTasks();
   const [filter, setFilter] = useState<FilterMode>('all');
 
-  // Build a lookup map from projectId → name.
-  const projectNameMap = useMemo(() => {
+  const taskNameMap = useMemo(() => {
     const map = new Map<string, string>();
-    for (const p of projects) {
-      map.set(p.id, p.name);
+    for (const task of tasks) {
+      map.set(task.id, task.name);
     }
     return map;
-  }, [projects]);
+  }, [tasks]);
 
   const filteredSessions = useMemo(() => {
     if (filter === 'all') return sessions;
     if (filter === 'work') return sessions.filter((s) => s.type === 'work');
-    // filter is a projectId
-    return sessions.filter((s) => s.projectId === filter);
+    return sessions.filter((session) => session.taskId === filter);
   }, [sessions, filter]);
 
   const dayGroups = useMemo(() => groupByDay(filteredSessions), [filteredSessions]);
@@ -66,9 +64,9 @@ export default function HistoryPage() {
         >
           <option value="all">All sessions</option>
           <option value="work">Work only</option>
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
+          {tasks.map((task) => (
+            <option key={task.id} value={task.id}>
+              {task.name}
             </option>
           ))}
         </select>
@@ -87,8 +85,8 @@ export default function HistoryPage() {
                 <li key={session.id}>
                   <SessionItem
                     session={session}
-                    projectName={
-                      session.projectId ? (projectNameMap.get(session.projectId) ?? null) : null
+                    taskName={
+                      session.taskId ? (taskNameMap.get(session.taskId) ?? null) : null
                     }
                   />
                 </li>

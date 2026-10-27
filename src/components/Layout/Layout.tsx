@@ -20,10 +20,10 @@ export default function Layout({ children }: LayoutProps) {
             Timer
           </NavLink>
           <NavLink
-            to="/projects"
+            to="/tasks"
             className={({ isActive }) => `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`}
           >
-            Projects
+            Tasks
           </NavLink>
           <NavLink
             to="/history"

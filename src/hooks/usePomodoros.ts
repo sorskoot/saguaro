@@ -13,12 +13,12 @@ export interface UsePomodorosResult {
     /**
      * Adds a new pomodoro session with a generated id and a start timestamp.
      * @param type The session type to create.
-     * @param projectId Optional project association; can be null.
+     * @param taskId Optional task association; can be null.
      * @returns The created session.
      */
     addSession: (
         type: SessionType,
-        projectId: string | null,
+        taskId: string | null,
     ) => PomodoroSession;
 
     /**
@@ -50,11 +50,11 @@ export function usePomodoros(): UsePomodorosResult {
     );
 
     const addSession = useCallback(
-        (type: SessionType, projectId: string | null): PomodoroSession => {
+        (type: SessionType, taskId: string | null): PomodoroSession => {
             const session: PomodoroSession = {
                 id: generateId(),
                 type,
-                projectId,
+                taskId,
                 startTime: new Date().toISOString(),
                 endTime: null,
                 completed: false,

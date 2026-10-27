@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import type { Project } from '../../types';
-import styles from './ProjectForm.module.css';
+import type { Task } from '../../types';
+import styles from './TaskForm.module.css';
 
-interface ProjectFormProps {
-  initial?: Partial<Project>;
+interface TaskFormProps {
+  initial?: Partial<Task>;
   onSubmit: (name: string, color: string) => void;
   onCancel?: () => void;
 }
 
 const DEFAULT_COLOR = '#e74c3c';
 
-export default function ProjectForm({ initial, onSubmit, onCancel }: ProjectFormProps) {
+export default function TaskForm({ initial, onSubmit, onCancel }: TaskFormProps) {
   const [name, setName] = useState(initial?.name ?? '');
   const [color, setColor] = useState(initial?.color ?? DEFAULT_COLOR);
 
@@ -25,11 +25,11 @@ export default function ProjectForm({ initial, onSubmit, onCancel }: ProjectForm
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
       <div className={styles.row}>
-        <label className={styles.label} htmlFor="project-name">
-          Project name
+        <label className={styles.label} htmlFor="task-name">
+          Task name
         </label>
         <input
-          id="project-name"
+          id="task-name"
           className={styles.input}
           type="text"
           value={name}
@@ -42,12 +42,12 @@ export default function ProjectForm({ initial, onSubmit, onCancel }: ProjectForm
       </div>
 
       <div className={styles.row}>
-        <label className={styles.label} htmlFor="project-color">
+        <label className={styles.label} htmlFor="task-color">
           Color
         </label>
         <div className={styles.colorRow}>
           <input
-            id="project-color"
+            id="task-color"
             className={styles.colorInput}
             type="color"
             value={color}
@@ -64,7 +64,7 @@ export default function ProjectForm({ initial, onSubmit, onCancel }: ProjectForm
           </button>
         )}
         <button type="submit" className={styles.submitBtn}>
-          {initial?.name ? 'Save' : 'Add Project'}
+          {initial?.name ? 'Save' : 'Add Task'}
         </button>
       </div>
     </form>

@@ -21,7 +21,7 @@ describe('usePomodoros', () => {
     expect(result.current.sessions).toHaveLength(1);
     const s = result.current.sessions[0];
     expect(s.type).toBe('work');
-    expect(s.projectId).toBeNull();
+    expect(s.taskId).toBeNull();
     expect(s.completed).toBe(false);
     expect(s.endTime).toBeNull();
     expect(typeof s.id).toBe('string');

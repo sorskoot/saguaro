@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
 import { useSettings } from '../hooks/useSettings';
 import { useTimer } from '../hooks/useTimer';
-import { useProjects } from '../hooks/useProjects';
+import { useTasks } from '../hooks/useTasks';
 import { usePomodoros } from '../hooks/usePomodoros';
 import ModeSelector from '../components/ModeSelector';
 import Timer from '../components/Timer';
-import ProjectSelector from '../components/ProjectSelector';
+import TaskSelector from '../components/TaskSelector';
 import type { SessionType } from '../types';
 import type { Settings } from '../types';
 import styles from './TimerPage.module.css';
@@ -18,17 +18,17 @@ function getTotalSeconds(mode: SessionType, settings: Settings): number {
 
 export default function TimerPage() {
   const { settings } = useSettings();
-  const { projects } = useProjects();
+  const { tasks } = useTasks();
   const { addSession, completeSession } = usePomodoros();
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   const handleComplete = useCallback(
     (completedMode: SessionType) => {
       // Record the completed session immediately upon completion.
-      const session = addSession(completedMode, selectedProjectId);
+      const session = addSession(completedMode, selectedTaskId);
       completeSession(session.id);
     },
-    [addSession, completeSession, selectedProjectId],
+    [addSession, completeSession, selectedTaskId],
   );
 
   const timer = useTimer({ settings, onComplete: handleComplete });
@@ -49,10 +49,10 @@ export default function TimerPage() {
         onReset={timer.reset}
         onSkip={timer.skip}
       />
-      <ProjectSelector
-        projects={projects}
-        selectedId={selectedProjectId}
-        onChange={setSelectedProjectId}
+      <TaskSelector
+        tasks={tasks}
+        selectedId={selectedTaskId}
+        onChange={setSelectedTaskId}
       />
     </div>
   );

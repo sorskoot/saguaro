@@ -1,13 +1,13 @@
 import { ExportService } from './ExportService';
-import { DEFAULT_SETTINGS, type AppData, type PomodoroSession, type Project, type Settings } from '../types';
+import { DEFAULT_SETTINGS, type AppData, type PomodoroSession, type Task, type Settings } from '../types';
 import type { IStorageService } from './interfaces/IStorageService';
 
 function createMockStorage() {
   const store: Record<string, string> = {};
   return {
     get: <T>(key: string): T | null => {
-      const v = store[key];
-      return v !== undefined ? (JSON.parse(v) as T) : null;
+      const value = store[key];
+      return value !== undefined ? (JSON.parse(value) as T) : null;
     },
     set: <T>(key: string, value: T) => {
       store[key] = JSON.stringify(value);
@@ -16,14 +16,14 @@ function createMockStorage() {
       delete store[key];
     },
     clear: () => {
-      Object.keys(store).forEach((k) => delete store[k]);
+      Object.keys(store).forEach((key) => delete store[key]);
     },
   } satisfies IStorageService;
 }
 
-const sampleProject: Project = {
-  id: 'proj-1',
-  name: 'My Project',
+const sampleTask: Task = {
+  id: 'task-1',
+  name: 'Write tests',
   color: '#aabbcc',
   createdAt: '2024-01-01T00:00:00.000Z',
   archived: false,
@@ -31,7 +31,7 @@ const sampleProject: Project = {
 
 const sampleSession: PomodoroSession = {
   id: 'sess-1',
-  projectId: 'proj-1',
+  taskId: 'task-1',
   type: 'work',
   startTime: '2024-01-01T09:00:00.000Z',
   endTime: '2024-01-01T09:25:00.000Z',
@@ -52,114 +52,127 @@ describe('ExportService', () => {
     service = new ExportService(storage);
   });
 
-  // ── exportData ─────────────────────────────────────────────────────────────
-
   describe('exportData()', () => {
     it('returns AppData with the correct shape when storage is empty', () => {
-      const result = service.exportData();
-
-      expect(result).toMatchObject({
+      expect(service.exportData()).toMatchObject({
         version: expect.any(String),
         settings: DEFAULT_SETTINGS,
-        projects: [],
+        tasks: [],
         sessions: [],
         exportedAt: expect.any(String),
       });
     });
 
-    it('includes settings stored under pomodoro_settings', () => {
+    it('includes stored settings', () => {
       storage.set('pomodoro_settings', sampleSettings);
 
-      const result = service.exportData();
-
-      expect(result.settings).toEqual(sampleSettings);
+      expect(service.exportData().settings).toEqual(sampleSettings);
     });
 
-    it('includes projects stored under pomodoro_projects', () => {
-      storage.set('pomodoro_projects', [sampleProject]);
+    it('includes tasks stored under pomodoro_tasks', () => {
+      storage.set('pomodoro_tasks', [sampleTask]);
 
-      const result = service.exportData();
-
-      expect(result.projects).toEqual([sampleProject]);
+      expect(service.exportData().tasks).toEqual([sampleTask]);
     });
 
-    it('includes sessions stored under pomodoro_sessions', () => {
+    it('migrates stored projects when exporting tasks', () => {
+      storage.set('pomodoro_projects', [sampleTask]);
+
+      expect(service.exportData().tasks).toEqual([sampleTask]);
+    });
+
+    it('exports sessions with task associations', () => {
       storage.set('pomodoro_sessions', [sampleSession]);
 
-      const result = service.exportData();
+      expect(service.exportData().sessions).toEqual([sampleSession]);
+    });
 
-      expect(result.sessions).toEqual([sampleSession]);
+    it('migrates old session associations when exporting', () => {
+      storage.set('pomodoro_sessions', [{
+        id: 'sess-1',
+        projectId: 'task-1',
+        type: 'work',
+        startTime: sampleSession.startTime,
+        endTime: sampleSession.endTime,
+        completed: true,
+      }]);
+
+      expect(service.exportData().sessions).toEqual([sampleSession]);
     });
 
     it('exportedAt is a valid ISO date string', () => {
-      const result = service.exportData();
+      const { exportedAt } = service.exportData();
 
-      expect(() => new Date(result.exportedAt)).not.toThrow();
-      expect(new Date(result.exportedAt).toISOString()).toBe(result.exportedAt);
+      expect(new Date(exportedAt).toISOString()).toBe(exportedAt);
     });
   });
-
-  // ── importData ─────────────────────────────────────────────────────────────
 
   describe('importData()', () => {
     const validPayload: AppData = {
       version: '1.0',
       settings: sampleSettings,
-      projects: [sampleProject],
+      tasks: [sampleTask],
       sessions: [sampleSession],
       exportedAt: '2024-01-01T12:00:00.000Z',
     };
 
-    it('writes settings to storage', () => {
+    it('writes settings, tasks, and sessions to storage', () => {
       service.importData(validPayload);
 
       expect(storage.get('pomodoro_settings')).toEqual(sampleSettings);
-    });
-
-    it('writes projects to storage', () => {
-      service.importData(validPayload);
-
-      expect(storage.get('pomodoro_projects')).toEqual([sampleProject]);
-    });
-
-    it('writes sessions to storage', () => {
-      service.importData(validPayload);
-
+      expect(storage.get('pomodoro_tasks')).toEqual([sampleTask]);
       expect(storage.get('pomodoro_sessions')).toEqual([sampleSession]);
     });
 
     it('returns the imported AppData', () => {
-      const result = service.importData(validPayload);
-
-      expect(result).toEqual(validPayload);
+      expect(service.importData(validPayload)).toEqual(validPayload);
     });
 
-    it('throws when the input is not an object (null)', () => {
+    it('imports legacy backups that contain projects and project associations', () => {
+      const legacySession = {
+        id: 'sess-1',
+        projectId: 'task-1',
+        type: 'work',
+        startTime: sampleSession.startTime,
+        endTime: sampleSession.endTime,
+        completed: true,
+      };
+      const result = service.importData({
+        version: '1.0',
+        settings: sampleSettings,
+        projects: [sampleTask],
+        sessions: [legacySession],
+        exportedAt: '2024-01-01T12:00:00.000Z',
+      });
+
+      expect(result.tasks).toEqual([sampleTask]);
+      expect(result.sessions).toEqual([sampleSession]);
+      expect(storage.get('pomodoro_tasks')).toEqual([sampleTask]);
+      expect(storage.get('pomodoro_sessions')).toEqual([sampleSession]);
+    });
+
+    it('throws when the input is not an object', () => {
       expect(() => service.importData(null)).toThrow('Invalid import data');
-    });
-
-    it('throws when the input is not an object (primitive)', () => {
       expect(() => service.importData(42)).toThrow('Invalid import data');
     });
 
-    it('throws when required field "version" is missing', () => {
-      const bad = { settings: sampleSettings, projects: [], sessions: [] };
-      expect(() => service.importData(bad)).toThrow('Invalid import data');
-    });
-
-    it('throws when required field "settings" is missing', () => {
-      const bad = { version: '1.0', projects: [], sessions: [] };
-      expect(() => service.importData(bad)).toThrow('Invalid import data');
-    });
-
-    it('throws when "projects" is not an array', () => {
-      const bad = { version: '1.0', settings: sampleSettings, projects: 'oops', sessions: [] };
-      expect(() => service.importData(bad)).toThrow('Invalid import data');
-    });
-
-    it('throws when "sessions" is not an array', () => {
-      const bad = { version: '1.0', settings: sampleSettings, projects: [], sessions: null };
-      expect(() => service.importData(bad)).toThrow('Invalid import data');
+    it('throws when required fields are missing or invalid', () => {
+      expect(() => service.importData({ settings: sampleSettings, tasks: [], sessions: [] }))
+        .toThrow('Invalid import data');
+      expect(() => service.importData({ version: '1.0', tasks: [], sessions: [] }))
+        .toThrow('Invalid import data');
+      expect(() => service.importData({
+        version: '1.0',
+        settings: sampleSettings,
+        tasks: 'invalid',
+        sessions: [],
+      })).toThrow('Invalid import data');
+      expect(() => service.importData({
+        version: '1.0',
+        settings: sampleSettings,
+        tasks: [],
+        sessions: null,
+      })).toThrow('Invalid import data');
     });
   });
 });

@@ -24,7 +24,7 @@ function createMockStorage() {
 function makeSession(id: string, overrides: Partial<PomodoroSession> = {}): PomodoroSession {
   return {
     id,
-    projectId: null,
+    taskId: null,
     type: 'work',
     startTime: new Date().toISOString(),
     endTime: null,
@@ -110,7 +110,7 @@ describe('PomodoroRepository', () => {
 
   it('stores sessions with their full shape intact', () => {
     const session = makeSession('s1', {
-      projectId: 'proj-42',
+      taskId: 'task-42',
       type: 'long-break',
       completed: true,
       endTime: '2024-01-01T10:30:00.000Z',
@@ -118,5 +118,16 @@ describe('PomodoroRepository', () => {
     repo.save(session);
 
     expect(repo.findById('s1')).toEqual(session);
+  });
+
+  it('migrates existing project associations to task associations', () => {
+    storage.set('pomodoro_sessions', [{
+      ...makeSession('s1'),
+      projectId: 'task-42',
+    }]);
+
+    expect(repo.findById('s1')).toMatchObject({ taskId: 'task-42' });
+    expect(storage.get<Array<Record<string, unknown>>>('pomodoro_sessions')?.[0])
+      .not.toHaveProperty('projectId');
   });
 });

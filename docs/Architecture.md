@@ -8,13 +8,13 @@ graph TD
     UI --> History[History Components]
     UI --> Layout[Layout]
     UI --> ModeSelector[Mode Selector]
-    UI --> Projects[Projects UI]
-    UI --> ProjectSelector[Project Selector]
+    UI --> Tasks[Tasks UI]
+    UI --> TaskSelector[Task Selector]
     UI --> Settings[Settings UI]
     UI --> Timer[Timer UI]
     Frontend --> Hooks[Custom Hooks]
     Hooks --> useTimer[useTimer]
-    Hooks --> useProjects[useProjects]
+    Hooks --> useTasks[useTasks]
     Hooks --> useSettings[useSettings]
     Hooks --> useExport[useExport]
     Frontend --> Services[Services]
@@ -23,13 +23,13 @@ graph TD
     Services --> StorageService[StorageService]
     Services --> Repositories[Repositories]
     Repositories --> PomodoroRepository[PomodoroRepository]
-    Repositories --> ProjectRepository[ProjectRepository]
+    Repositories --> TaskRepository[TaskRepository]
     Repositories --> SettingsRepository[SettingsRepository]
     Frontend --> State[State Management]
     State --> Store[Zustand / Local state]
     Frontend --> Routing[Pages]
     Routing --> TimerPage[TimerPage]
-    Routing --> ProjectsPage[ProjectsPage]
+    Routing --> TasksPage[TasksPage]
     Routing --> SettingsPage[SettingsPage]
     Routing --> HistoryPage[HistoryPage]
     Frontend --> PWA[Service Worker / PWA]
@@ -43,12 +43,12 @@ graph TD
 
 **Component breakdown**
 - **Frontend (React + Vite):** app entrypoint and build system. See [src/main.tsx](src/main.tsx) and [index.html](index.html).
-- **UI Components:** presentational components grouped under `src/components/` (Timer, Projects, Settings, History). They render state and emit user intents (events).
-- **Custom Hooks:** encapsulate behavioral logic and are used by components to access timer mechanics, settings, projects, and export features. Notable hooks: `useTimer`, `useProjects`, `useSettings`, `useExport` (see `src/hooks/`).
+- **UI Components:** presentational components grouped under `src/components/` (Timer, Tasks, Settings, History). They render state and emit user intents (events).
+- **Custom Hooks:** encapsulate behavioral logic and are used by components to access timer mechanics, settings, tasks, and export features. Notable hooks: `useTimer`, `useTasks`, `useSettings`, `useExport` (see `src/hooks/`).
 - **Services:** thin application services providing higher-level operations like `TimerService`, `ExportService`, and `StorageService` (see `src/services/`). They coordinate repositories and lower-level APIs.
-- **Repositories:** small adapters that read/write domain objects from the chosen storage (localStorage / IndexedDB). Examples: `PomodoroRepository`, `ProjectRepository`, `SettingsRepository` under `src/services/`.
+- **Repositories:** small adapters that read/write domain objects from the chosen storage (localStorage / IndexedDB). Examples: `PomodoroRepository`, `TaskRepository`, `SettingsRepository` under `src/services/`.
 - **State Management:** a lightweight local store (Zustand or React state hooks) holds current session state, UI settings, and short-lived values. Persistent state is synced to repositories.
-- **Routing / Pages:** top-level pages under `src/pages/` map UI routes to page components (TimerPage, ProjectsPage, SettingsPage, HistoryPage).
+- **Routing / Pages:** top-level pages under `src/pages/` map UI routes to page components (TimerPage, TasksPage, SettingsPage, HistoryPage).
 - **PWA / Service Worker:** `public/sw.js` and `public/manifest.webmanifest` enable offline behavior, caching of assets and (optionally) background sync for exports.
 
 **Data & Control Flow**

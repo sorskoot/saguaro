@@ -25,7 +25,7 @@ export default function SettingsPage() {
   function handleClearAll() {
     if (
       window.confirm(
-        'Clear ALL data? This will permanently delete all sessions and projects. This cannot be undone.',
+        'Clear ALL data? This will permanently delete all sessions and tasks. This cannot be undone.',
       )
     ) {
       localStorage.clear();
@@ -106,7 +106,7 @@ export default function SettingsPage() {
             <div>
               <p className={styles.dataActionLabel}>Export data</p>
               <p className={styles.dataActionDesc}>
-                Download a JSON backup of all sessions, projects, and settings.
+                Download a JSON backup of all sessions, tasks, and settings.
               </p>
             </div>
             <button className={styles.exportBtn} type="button" onClick={exportToFile}>
@@ -146,7 +146,7 @@ export default function SettingsPage() {
           <div>
             <p className={styles.dataActionLabel}>Clear all data</p>
             <p className={styles.dataActionDesc}>
-              Permanently delete all sessions, projects, and settings. This cannot be undone.
+              Permanently delete all sessions, tasks, and settings. This cannot be undone.
             </p>
           </div>
           <button className={styles.dangerBtn} type="button" onClick={handleClearAll}>

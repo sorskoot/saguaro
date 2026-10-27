@@ -3,7 +3,7 @@ import styles from './SessionItem.module.css';
 
 interface SessionItemProps {
   session: PomodoroSession;
-  projectName: string | null;
+  taskName: string | null;
 }
 
 function formatTimeRange(isoStart: string, isoEnd: string | null): string {
@@ -19,7 +19,7 @@ function formatTimeRange(isoStart: string, isoEnd: string | null): string {
   return `${start} – ${end}`;
 }
 
-export default function SessionItem({ session, projectName }: SessionItemProps) {
+export default function SessionItem({ session, taskName }: SessionItemProps) {
   const isWork = session.type === 'work';
   const icon = isWork ? '🍅' : '☕';
 
@@ -31,8 +31,8 @@ export default function SessionItem({ session, projectName }: SessionItemProps) 
       <span className={styles.timeRange}>
         {formatTimeRange(session.startTime, session.endTime)}
       </span>
-      <span className={projectName ? styles.projectName : `${styles.projectName} ${styles.noProject}`}>
-        {projectName ?? 'No project'}
+      <span className={taskName ? styles.taskName : `${styles.taskName} ${styles.noTask}`}>
+        {taskName ?? 'No task'}
       </span>
       <span
         className={`${styles.badge} ${

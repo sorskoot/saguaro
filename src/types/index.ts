@@ -18,7 +18,7 @@ export const DEFAULT_SETTINGS: Settings = {
   soundEnabled: true,
 };
 
-export interface Project {
+export interface Task {
   id: string;
   name: string;
   color: string;
@@ -30,7 +30,7 @@ export type SessionType = 'work' | 'short-break' | 'long-break';
 
 export interface PomodoroSession {
   id: string;
-  projectId: string | null;
+  taskId: string | null;
   type: SessionType;
   startTime: string;
   endTime: string | null;
@@ -40,7 +40,7 @@ export interface PomodoroSession {
 export interface AppData {
   version: string;
   settings: Settings;
-  projects: Project[];
+  tasks: Task[];
   sessions: PomodoroSession[];
   exportedAt: string;
 }

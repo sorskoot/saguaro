@@ -29,7 +29,7 @@ function makeAppData(overrides: Partial<AppData> = {}): AppData {
   return {
     version: '1.0',
     settings: { ...DEFAULT_SETTINGS },
-    projects: [],
+    tasks: [],
     sessions: [],
     exportedAt: new Date().toISOString(),
     ...overrides,
@@ -117,7 +117,7 @@ describe('useExport', () => {
       const onError = vi.fn();
       const { result } = renderHook(() => useExport({ onError }));
 
-      // Valid JSON but not a proper AppData shape (missing projects/sessions/version).
+      // Valid JSON but not a proper AppData shape (missing tasks/sessions/version).
       const file = makeFile(JSON.stringify({ foo: 'bar' }));
 
       await act(async () => {
