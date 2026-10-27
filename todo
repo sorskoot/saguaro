@@ -7,6 +7,7 @@ TODO:
         ☐ Add more circles if more pomodoros are needed when working on a task. Give these a different color.
         ☐ Add a button to note when an interuption occurs.
         ☐ A Pomodoro should be pausable. When it's started and you hit 'pause', it should ask if you are sure and then end the pomodoro. When the pomodoro ends, it is counted.
+        ✓ Improve responsiveness @done(26-10-27 22:42)
 
     History:
         ☐ Record the number of Pomodoros completed for each task.

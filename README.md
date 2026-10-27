@@ -2,6 +2,12 @@
 
 A Progressive Web App (PWA) Pomodoro timer built with React, TypeScript, and Vite.
 
+The layout adapts to phones and tablets with scalable timer controls, touch-friendly navigation,
+wrapping task and history rows, and stacked settings actions on small screens.
+On the Timer page, windows at most 550px wide and 300px high show only the countdown,
+centered and scaled to fit. The timer keeps running; enlarge either dimension beyond
+that breakpoint to restore navigation and controls.
+
 ## Development
 
 Install dependencies and start the dev server:

@@ -99,3 +99,48 @@
   background-color: rgba(233, 69, 96, 0.1);
   border-color: rgba(233, 69, 96, 0.3);
 }
+
+@media (max-width: 600px) {
+  .row {
+    display: grid;
+    grid-template-columns: 12px minmax(0, 1fr) auto;
+    gap: var(--space-sm);
+  }
+
+  .name {
+    grid-column: 2 / -1;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .estimate {
+    grid-column: 2;
+    justify-self: start;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .sessionCount {
+    grid-column: 2;
+  }
+
+  .actions {
+    grid-column: 3;
+    grid-row: 2 / 4;
+    align-self: center;
+  }
+
+  .iconBtn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 360px) {
+  .actions {
+    grid-column: 2 / -1;
+    grid-row: auto;
+    justify-self: end;
+  }
+}

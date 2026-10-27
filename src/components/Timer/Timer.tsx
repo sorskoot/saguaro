@@ -43,7 +43,7 @@ export default function Timer({
     : Math.min(pomodoroCount, dotsCount);
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} data-timer>
       <div className={styles.modeLabel}>{MODE_LABELS[mode]}</div>
 
       <div className={styles.ringWrapper}>

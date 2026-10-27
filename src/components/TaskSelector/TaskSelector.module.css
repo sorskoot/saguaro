@@ -19,6 +19,8 @@
   appearance: none;
   -webkit-appearance: none;
   flex: 1;
+  min-width: 0;
+  min-height: 44px;
   padding: var(--space-sm) 2.5rem var(--space-sm) var(--space-md);
   background-color: var(--color-surface);
   color: var(--color-text-primary);

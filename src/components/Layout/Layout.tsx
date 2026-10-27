@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import styles from './Layout.module.css';
 
 interface LayoutProps {
@@ -7,8 +7,10 @@ interface LayoutProps {
 }
 
 export default function Layout({ children }: LayoutProps) {
+  const { pathname } = useLocation();
+
   return (
-    <div className={styles.shell}>
+    <div className={styles.shell} data-timer-view={pathname === '/'}>
       <header className={styles.navbar}>
         <span className={styles.brand}>Pomodoro</span>
         <nav className={styles.navLinks}>

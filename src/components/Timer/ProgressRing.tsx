@@ -20,6 +20,7 @@ export default function ProgressRing({
     <svg
       width={size}
       height={size}
+      viewBox={`0 0 ${size} ${size}`}
       style={{ transform: 'rotate(-90deg)' }}
       aria-hidden="true"
     >

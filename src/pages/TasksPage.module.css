@@ -56,3 +56,13 @@
   flex-direction: column;
   gap: var(--space-sm);
 }
+
+@media (max-width: 600px) {
+  .header {
+    flex-wrap: wrap;
+  }
+
+  .addBtn {
+    min-height: 44px;
+  }
+}

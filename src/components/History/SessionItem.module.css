@@ -81,3 +81,27 @@
   color: var(--color-text-muted);
   border: 1px solid rgba(92, 92, 122, 0.2);
 }
+
+@media (max-width: 600px) {
+  .row {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+  }
+
+  .timeRange {
+    min-width: 0;
+  }
+
+  .taskName {
+    grid-column: 2 / -1;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .badge {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}

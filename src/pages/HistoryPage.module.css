@@ -25,6 +25,9 @@
 .filterSelect {
   appearance: none;
   -webkit-appearance: none;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
   padding: var(--space-sm) var(--space-lg) var(--space-sm) var(--space-md);
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -101,4 +104,16 @@
   flex-direction: column;
   gap: 2px;
   margin-top: var(--space-xs);
+}
+
+@media (max-width: 600px) {
+  .filterSelect {
+    width: 100%;
+  }
+
+  .groups {
+    max-height: none;
+    overflow-y: visible;
+    padding-right: 0;
+  }
 }

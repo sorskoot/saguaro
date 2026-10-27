@@ -123,3 +123,24 @@
   border-color: rgba(255, 255, 255, 0.18);
   background-color: rgba(255, 255, 255, 0.04);
 }
+
+@media (max-width: 600px) {
+  .form {
+    padding: var(--space-md);
+  }
+
+  .input {
+    min-width: 0;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .actions {
+    flex-wrap: wrap;
+  }
+
+  .submitBtn,
+  .cancelBtn {
+    min-height: 44px;
+  }
+}
