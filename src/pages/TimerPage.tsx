@@ -6,6 +6,7 @@ import { useTasks } from '../hooks/useTasks';
 import { usePomodoros } from '../hooks/usePomodoros';
 import ModeSelector from '../components/ModeSelector';
 import Timer from '../components/Timer';
+import TimerPictureInPicture from '../components/Timer/TimerPictureInPicture';
 import TaskSelector from '../components/TaskSelector';
 import type { SessionType } from '../types';
 import type { Settings } from '../types';
@@ -58,6 +59,7 @@ export default function TimerPage() {
         onReset={timer.reset}
         onSkip={timer.skip}
       />
+      <TimerPictureInPicture secondsLeft={timer.secondsLeft} />
       <TaskSelector
         tasks={tasks}
         selectedId={selectedTaskId}

@@ -7,6 +7,7 @@ export default defineConfig({
     test: {
         globals: true,
         environment: 'jsdom',
+        css: { include: /TimerPictureInPicture\.css/ },
         setupFiles: ['./src/test/setup.ts'],
     },
 });

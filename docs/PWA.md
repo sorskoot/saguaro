@@ -16,6 +16,19 @@ export const PWA_BASE_PATH: string = rawBase.endsWith('/') ? rawBase : `${rawBas
 navigator.serviceWorker.register(`${PWA_BASE_PATH}sw.js`, { scope: PWA_BASE_PATH });
 ```
 
+## Floating timer
+
+On desktop browsers supporting Document Picture-in-Picture (such as Chrome and
+Edge), select **Float timer** on the timer page to open a small always-on-top
+window showing the remaining time. It stays synchronized with the main timer,
+including start, pause, reset, skip, and mode changes. Controls remain in the main
+app. Select **Close floating timer** or use the floating window's close button to
+close it without stopping the timer.
+
+The button is hidden in unsupported browsers. HTTPS or localhost is required;
+installation as a PWA is optional. Keep the main app open on the timer page:
+leaving that page or closing the app also closes the floating timer.
+
 ## Development
 
 In development (`npm run dev`), Vite sets `BASE_URL` to `/`.
