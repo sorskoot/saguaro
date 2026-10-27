@@ -9,76 +9,24 @@ import type {
 } from '../types/timerWorker';
 
 export interface UseTimerOptions {
-    /**
-     * Current timer settings that define durations and auto-start behavior.
-     */
-      settings: Settings;
-
-    /**
-     * Optional callback invoked when a session completes.
-     * @param mode The completed session type.
-     */
-      onComplete?: (mode: SessionType) => void;
+    settings: Settings;
+    onComplete?: (mode: SessionType) => void;
 }
 
 export interface UseTimerResult {
-    /**
-     * Seconds remaining for the active session.
-     */
     secondsLeft: number;
-
-    /**
-     * Whether the timer service is actively running.
-     */
     isRunning: boolean;
-
-    /**
-     * Current session mode.
-     */
     mode: SessionType;
-
-    /**
-     * Number of completed work sessions so far.
-     */
     pomodoroCount: number;
-
-    /**
-     * Starts/resumes the timer from the current `secondsLeft`.
-     */
     start: () => void;
-
-    /**
-     * Pauses/stops the timer without changing the current session state.
-     */
     pause: () => void;
-
-    /**
-     * Stops the timer and resets `secondsLeft` to the duration for the current mode.
-     */
     reset: () => void;
-
-    /**
-     * Stops the timer and advances to the next mode without completing side effects
-     * (no callback and no sound).
-     */
     skip: () => void;
-
-    /**
-     * Switches to a specific mode and resets the clock for that mode.
-     */
     changeMode: (mode: SessionType) => void;
 }
 
-/**
- * Returns the duration in seconds for the given mode and settings.
- * @param mode Session mode whose duration is needed.
- * @param settings Settings source containing per-mode durations.
- * @returns Duration in seconds.
- */
+/** Returns the duration in seconds for the given mode and settings. */
 function durationFor(mode: SessionType, settings: Settings): number {
-    if (mode === 'work') return settings.workDuration * 60;
-    if (mode === 'short-break') return settings.shortBreakDuration * 60;
-    return settings.longBreakDuration * 60;
     if (mode === 'work') return settings.workDuration * 60;
     if (mode === 'short-break') return settings.shortBreakDuration * 60;
     return settings.longBreakDuration * 60;
@@ -87,11 +35,8 @@ function durationFor(mode: SessionType, settings: Settings): number {
 /**
  * Determines the next mode after the current one completes.
  * After every `longBreakInterval` work sessions, a long break is inserted.
- *
- * @param current Current session mode that just completed.
- * @param pomodoroCount Number of completed work sessions so far (before incrementing for the next work session).
- * @param settings Settings controlling long break interval.
- * @returns The next session mode.
+ * `pomodoroCount` is the number of *completed* work sessions so far (before
+ * incrementing for the one that just finished).
  */
 function nextMode(
     current: SessionType,
@@ -110,10 +55,24 @@ function nextMode(
         : 'short-break';
 }
 
-/**
- * Runs the pomodoro countdown using a shared {@link timerService}.
- * Handles mode transitions, optional completion callbacks, and beep playback.
- */
+function notifyCompletion(mode: SessionType): void {
+    if (typeof window === 'undefined' || typeof Notification === 'undefined')
+        return;
+    if (Notification.permission !== 'granted') return;
+
+    const modeLabel =
+        mode === 'work'
+            ? 'Work session'
+            : mode === 'short-break'
+              ? 'Short break'
+              : 'Long break';
+
+    new Notification('Pomodoro finished', {
+        body: `${modeLabel} completed.`,
+        tag: 'pomodoro-complete',
+    });
+}
+
 export function useTimer({
     settings,
     onComplete,
@@ -129,11 +88,20 @@ export function useTimer({
     // needing to restart the interval.
     const modeRef = useRef(mode);
     const secondsLeftRef = useRef(secondsLeft);
+    const isRunningRef = useRef(isRunning);
     const pomodoroCountRef = useRef(pomodoroCount);
     const settingsRef = useRef(settings);
     const onCompleteRef = useRef(onComplete);
     // tickRef lets advanceMode always call the live tick without a forward-reference closure bug.
     const tickRef = useRef<TimerCallback>(() => {});
+    const workerRef = useRef<Worker | null>(null);
+    const endAtRef = useRef<number | null>(null);
+    const usingWorkerRef = useRef(false);
+
+    const setRunning = useCallback((running: boolean) => {
+        isRunningRef.current = running;
+        setIsRunning(running);
+    }, []);
 
     useEffect(() => {
         modeRef.current = mode;
@@ -141,6 +109,9 @@ export function useTimer({
     useEffect(() => {
         secondsLeftRef.current = secondsLeft;
     }, [secondsLeft]);
+    useEffect(() => {
+        isRunningRef.current = isRunning;
+    }, [isRunning]);
     useEffect(() => {
         pomodoroCountRef.current = pomodoroCount;
     }, [pomodoroCount]);
@@ -168,64 +139,109 @@ export function useTimer({
         settings.shortBreakDuration,
         settings.longBreakDuration,
     ]);
-    // When settings change, reset the timer to the new duration for the current mode
-    // only if it is not currently running.
-    useEffect(() => {
-        if (!isRunning) {
-            setSecondsLeft(durationFor(mode, settings));
-        }
-        // Intentional: only the three duration fields should trigger this reset.
-        // Including `isRunning` would fire on every pause/resume (resetting a mid-session
-        // timer); including `mode` would fire on every session transition. Neither is
-        // desired. There is no isRunningRef to use as a workaround without adding new
-        // logic, so the exhaustive-deps rule must be suppressed here.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [
-        settings.workDuration,
-        settings.shortBreakDuration,
-        settings.longBreakDuration,
-    ]);
 
     /** Advance to the next mode, optionally auto-starting it. */
-    const advanceMode = useCallback((autoStart: boolean) => {
-        const currentMode = modeRef.current;
-        const currentCount = pomodoroCountRef.current;
-        const currentSettings = settingsRef.current;
+    const advanceMode = useCallback(
+        (autoStart: boolean) => {
+            const currentMode = modeRef.current;
+            const currentCount = pomodoroCountRef.current;
+            const currentSettings = settingsRef.current;
 
-        let newCount = currentCount;
-        if (currentMode === 'work') {
-            newCount = currentCount + 1;
-            setPomodoroCount(newCount);
-            pomodoroCountRef.current = newCount;
-        }
+            let newCount = currentCount;
+            if (currentMode === 'work') {
+                newCount = currentCount + 1;
+                setPomodoroCount(newCount);
+                pomodoroCountRef.current = newCount;
+            }
 
-        const next = nextMode(currentMode, currentCount, currentSettings);
-        const nextSeconds = durationFor(next, currentSettings);
+            const next = nextMode(currentMode, currentCount, currentSettings);
+            const nextSeconds = durationFor(next, currentSettings);
 
-        setMode(next);
-        modeRef.current = next;
-        setSecondsLeft(nextSeconds);
-        secondsLeftRef.current = nextSeconds;
+            setMode(next);
+            modeRef.current = next;
+            setSecondsLeft(nextSeconds);
+            secondsLeftRef.current = nextSeconds;
 
-        if (autoStart) {
-            // timerService may already be stopped; start fresh.
-            // Use tickRef so we always invoke the live tick, not the stale closure captured at creation time.
-            timerService.stop();
-            timerService.start(() => tickRef.current());
-            setIsRunning(true);
-        } else {
-            setIsRunning(false);
-        }
-    }, []);
+            if (autoStart) {
+                timerService.stop();
 
-    /** Called every second by timerService. */
-    const tick = useCallback(() => {
-        const next = secondsLeftRef.current - 1;
-        if (next > 0) {
-            setSecondsLeft(next);
-            secondsLeftRef.current = next;
+                const nextEndAt = Date.now() + nextSeconds * 1000;
+                endAtRef.current = nextEndAt;
+
+                if (usingWorkerRef.current && workerRef.current) {
+                    workerRef.current.postMessage({
+                        type: 'start',
+                        endAt: nextEndAt,
+                    } satisfies TimerWorkerCommand);
+                    setRunning(true);
+                    return;
+                }
+
+                // Use tickRef so we always invoke the live tick, not the stale closure captured at creation time.
+                timerService.start(() => tickRef.current());
+                setRunning(true);
+            } else {
+                setRunning(false);
+                endAtRef.current = null;
+            }
+        },
+        [setRunning],
+    );
+
+    useEffect(() => {
+        if (typeof Worker === 'undefined') {
+            usingWorkerRef.current = false;
             return;
         }
+
+        const worker = new Worker(
+            new URL('../workers/timerWorker.ts', import.meta.url),
+            { type: 'module' },
+        );
+        workerRef.current = worker;
+        usingWorkerRef.current = true;
+
+        worker.onmessage = (event: MessageEvent<TimerWorkerEvent>) => {
+            const message = event.data;
+
+            if (message.type === 'tick') {
+                setSecondsLeft(message.secondsLeft);
+                secondsLeftRef.current = message.secondsLeft;
+                return;
+            }
+
+            if (message.type === 'complete') {
+                setSecondsLeft(0);
+                secondsLeftRef.current = 0;
+                setRunning(false);
+                endAtRef.current = null;
+
+                const completedMode = modeRef.current;
+                const currentSettings = settingsRef.current;
+
+                onCompleteRef.current?.(completedMode);
+                if (currentSettings.soundEnabled) {
+                    playBeep();
+                }
+                notifyCompletion(completedMode);
+
+                const shouldAutoStart =
+                    completedMode === 'work'
+                        ? currentSettings.autoStartBreaks
+                        : currentSettings.autoStartPomodoros;
+
+                advanceMode(shouldAutoStart);
+            }
+        };
+
+        return () => {
+            worker.postMessage({ type: 'stop' } satisfies TimerWorkerCommand);
+            worker.terminate();
+            workerRef.current = null;
+            usingWorkerRef.current = false;
+        };
+    }, [advanceMode, setRunning]);
+
     /** Called every second by timerService. */
     const tick = useCallback(() => {
         const next = secondsLeftRef.current - 1;
@@ -239,15 +255,12 @@ export function useTimer({
         timerService.stop();
         setSecondsLeft(0);
         secondsLeftRef.current = 0;
-        setIsRunning(false);
+        setRunning(false);
+        endAtRef.current = null;
 
         const completedMode = modeRef.current;
         const currentSettings = settingsRef.current;
-        const completedMode = modeRef.current;
-        const currentSettings = settingsRef.current;
 
-        // Fire callback.
-        onCompleteRef.current?.(completedMode);
         // Fire callback.
         onCompleteRef.current?.(completedMode);
 
@@ -255,12 +268,8 @@ export function useTimer({
         if (currentSettings.soundEnabled) {
             playBeep();
         }
+        notifyCompletion(completedMode);
 
-        // Determine whether to auto-advance.
-        const shouldAutoStart =
-            completedMode === 'work'
-                ? currentSettings.autoStartBreaks
-                : currentSettings.autoStartPomodoros;
         // Determine whether to auto-advance.
         const shouldAutoStart =
             completedMode === 'work'
@@ -268,35 +277,55 @@ export function useTimer({
                 : currentSettings.autoStartPomodoros;
 
         advanceMode(shouldAutoStart);
-    }, [advanceMode]);
+    }, [advanceMode, setRunning]);
 
     // Keep tickRef pointing at the live tick so advanceMode's auto-start path is never stale.
     useEffect(() => {
         tickRef.current = tick;
     }, [tick]);
 
+    const stopActiveTimer = useCallback(() => {
+        workerRef.current?.postMessage({
+            type: 'pause',
+        } satisfies TimerWorkerCommand);
+        timerService.stop();
+        setRunning(false);
+        endAtRef.current = null;
+    }, [setRunning]);
+
     const start = useCallback(() => {
+        if (isRunningRef.current) return;
+
+        const endAt = Date.now() + secondsLeftRef.current * 1000;
+        endAtRef.current = endAt;
+
+        if (usingWorkerRef.current && workerRef.current) {
+            workerRef.current.postMessage({
+                type: 'start',
+                endAt,
+            } satisfies TimerWorkerCommand);
+            setRunning(true);
+            return;
+        }
+
         if (timerService.isRunning()) return;
         timerService.start(tick);
-        setIsRunning(true);
-    }, [tick]);
+        setRunning(true);
+    }, [setRunning, tick]);
 
     const pause = useCallback(() => {
-        timerService.stop();
-        setIsRunning(false);
-    }, []);
+        stopActiveTimer();
+    }, [stopActiveTimer]);
 
     const reset = useCallback(() => {
-        timerService.stop();
-        setIsRunning(false);
+        stopActiveTimer();
         const duration = durationFor(modeRef.current, settingsRef.current);
         setSecondsLeft(duration);
         secondsLeftRef.current = duration;
-    }, []);
+    }, [stopActiveTimer]);
 
     const skip = useCallback(() => {
-        timerService.stop();
-        setIsRunning(false);
+        stopActiveTimer();
         // Advance without triggering callback or sound.
         const currentMode = modeRef.current;
         const currentCount = pomodoroCountRef.current;
@@ -308,15 +337,7 @@ export function useTimer({
             setPomodoroCount(newCount);
             pomodoroCountRef.current = newCount;
         }
-        let newCount = currentCount;
-        if (currentMode === 'work') {
-            newCount = currentCount + 1;
-            setPomodoroCount(newCount);
-            pomodoroCountRef.current = newCount;
-        }
 
-        const next = nextMode(currentMode, currentCount, currentSettings);
-        const nextSeconds = durationFor(next, currentSettings);
         const next = nextMode(currentMode, currentCount, currentSettings);
         const nextSeconds = durationFor(next, currentSettings);
 
@@ -324,18 +345,20 @@ export function useTimer({
         modeRef.current = next;
         setSecondsLeft(nextSeconds);
         secondsLeftRef.current = nextSeconds;
-    }, []);
+    }, [stopActiveTimer]);
 
     /** Stop the timer and jump directly to the given mode, resetting the clock. */
-    const changeMode = useCallback((newMode: SessionType) => {
-        timerService.stop();
-        setIsRunning(false);
-        const duration = durationFor(newMode, settingsRef.current);
-        setMode(newMode);
-        modeRef.current = newMode;
-        setSecondsLeft(duration);
-        secondsLeftRef.current = duration;
-    }, []);
+    const changeMode = useCallback(
+        (newMode: SessionType) => {
+            stopActiveTimer();
+            const duration = durationFor(newMode, settingsRef.current);
+            setMode(newMode);
+            modeRef.current = newMode;
+            setSecondsLeft(duration);
+            secondsLeftRef.current = duration;
+        },
+        [stopActiveTimer],
+    );
 
     // Clean up the interval when the component unmounts.
     useEffect(() => {
@@ -343,24 +366,7 @@ export function useTimer({
             timerService.stop();
         };
     }, []);
-    // Clean up the interval when the component unmounts.
-    useEffect(() => {
-        return () => {
-            timerService.stop();
-        };
-    }, []);
 
-    return {
-        secondsLeft,
-        isRunning,
-        mode,
-        pomodoroCount,
-        start,
-        pause,
-        reset,
-        skip,
-        changeMode,
-    };
     return {
         secondsLeft,
         isRunning,
