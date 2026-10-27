@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTasks } from '../hooks/useTasks';
 import { usePomodoros } from '../hooks/usePomodoros';
+import { useSelectedTask } from '../hooks/useSelectedTask';
 import { TaskForm, TaskItem } from '../components/Tasks';
 import type { Task } from '../types';
 import styles from './TasksPage.module.css';
@@ -13,19 +14,21 @@ type FormState =
 export default function TasksPage() {
   const { tasks, addTask, updateTask, archiveTask, deleteTask } = useTasks();
   const { sessions } = usePomodoros();
+  const { selectedTaskId, setSelectedTaskId } = useSelectedTask();
   const [formState, setFormState] = useState<FormState>({ mode: 'hidden' });
 
   function getSessionCount(taskId: string): number {
     return sessions.filter((session) => session.taskId === taskId && session.completed).length;
   }
 
-  function handleAdd(name: string, color: string) {
-    addTask(name, color);
+  function handleAdd(name: string, color: string, estimatedPomodoros: number) {
+    const task = addTask(name, color, estimatedPomodoros);
+    setSelectedTaskId(task.id);
     setFormState({ mode: 'hidden' });
   }
 
-  function handleEdit(task: Task, name: string, color: string) {
-    updateTask(task.id, { name, color });
+  function handleEdit(task: Task, name: string, color: string, estimatedPomodoros: number) {
+    updateTask(task.id, { name, color, estimatedPomodoros });
     setFormState({ mode: 'hidden' });
   }
 
@@ -79,13 +82,17 @@ export default function TasksPage() {
             {isEditing(task.id) ? (
               <TaskForm
                 initial={task}
-                onSubmit={(name, color) => handleEdit(task, name, color)}
+                onSubmit={(name, color, estimatedPomodoros) =>
+                  handleEdit(task, name, color, estimatedPomodoros)
+                }
                 onCancel={() => setFormState({ mode: 'hidden' })}
               />
             ) : (
               <TaskItem
                 task={task}
                 sessionCount={getSessionCount(task.id)}
+                selected={task.id === selectedTaskId}
+                onSelect={() => setSelectedTaskId(task.id)}
                 onEdit={() => setFormState({ mode: 'edit', task })}
                 onArchive={() => handleArchive(task)}
                 onDelete={() => handleDelete(task)}

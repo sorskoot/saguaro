@@ -1,8 +1,8 @@
 TODO:
     General:
         ✓ Rename Projects to Tasks. In pomodoro you work on a Task for a number of Pomodoros. @done(26-10-27 21:11)
-        ☐ Add functionality to select a task in the Tasks tab and that task becomes the active task. This task is selected in the Timer view too. When adding a new task, that task is selected.
-        ☐ Assign a number of Pomodoros to each task.
+        ✓ Add functionality to select a task in the Tasks tab and that task becomes the active task. This task is selected in the Timer view too. When adding a new task, that task is selected. @done(26-10-27 21:42)
+        ✓ Assign a number of Pomodoros to each task. @done(26-10-27 21:43)
         ☐ Visualize the number of Pomodoros assigned to a task on the timer view as the little circles.
         ☐ Add more circles if more pomodoros are needed when working on a task. Give these a different color.
         ☐ Add a button to note when an interuption occurs.
@@ -16,5 +16,11 @@ TODO:
         ☐ Add an optional description for a task.
         ☐ Add an optional link to a tasks. So a task can be linked to an issue on GitHub.
 
-
-
+ADHD / AI Driven Development:
+    ## Ideas
+    See docs/ADHD-AI-Development.md
+    ☐ Task states: Active / Waiting / Done, soft cap of 3 Active tasks.
+    ☐ Next action and "where was I" note per task.
+    ☐ Parking lot for intrusive thoughts.
+    ☐ Break-time review of Waiting tasks.
+    ☐ Switch counter per sprint.

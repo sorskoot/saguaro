@@ -5,7 +5,7 @@ import styles from './TaskForm.module.css';
 
 interface TaskFormProps {
   initial?: Partial<Task>;
-  onSubmit: (name: string, color: string) => void;
+  onSubmit: (name: string, color: string, estimatedPomodoros: number) => void;
   onCancel?: () => void;
 }
 
@@ -14,12 +14,16 @@ const DEFAULT_COLOR = '#e74c3c';
 export default function TaskForm({ initial, onSubmit, onCancel }: TaskFormProps) {
   const [name, setName] = useState(initial?.name ?? '');
   const [color, setColor] = useState(initial?.color ?? DEFAULT_COLOR);
+  const [estimatedPomodoros, setEstimatedPomodoros] = useState(
+    String(initial?.estimatedPomodoros ?? 1),
+  );
 
-  function handleSubmit(e: FormEvent) {
+  function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!e.currentTarget.reportValidity()) return;
     const trimmed = name.trim();
     if (!trimmed) return;
-    onSubmit(trimmed, color);
+    onSubmit(trimmed, color, Number(estimatedPomodoros));
   }
 
   return (
@@ -37,6 +41,22 @@ export default function TaskForm({ initial, onSubmit, onCancel }: TaskFormProps)
           placeholder="e.g. Deep Work"
           autoFocus
           maxLength={80}
+          required
+        />
+      </div>
+
+      <div className={styles.row}>
+        <label className={styles.label} htmlFor="task-pomodoros">
+          Estimated Pomodoros
+        </label>
+        <input
+          id="task-pomodoros"
+          className={styles.input}
+          type="number"
+          min="1"
+          step="1"
+          value={estimatedPomodoros}
+          onChange={(e) => setEstimatedPomodoros(e.target.value)}
           required
         />
       </div>

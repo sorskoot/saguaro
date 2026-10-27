@@ -15,13 +15,14 @@ describe('useTasks', () => {
     const { result } = renderHook(() => useTasks());
 
     act(() => {
-      result.current.addTask('My task', '#ff0000');
+      result.current.addTask('My task', '#ff0000', 3);
     });
 
     expect(result.current.tasks).toHaveLength(1);
     const task = result.current.tasks[0];
     expect(task.name).toBe('My task');
     expect(task.color).toBe('#ff0000');
+    expect(task.estimatedPomodoros).toBe(3);
     expect(task.archived).toBe(false);
     expect(typeof task.id).toBe('string');
     expect(task.id.length).toBeGreaterThan(0);
@@ -33,7 +34,7 @@ describe('useTasks', () => {
     const { result } = renderHook(() => useTasks());
 
     act(() => {
-      result.current.addTask('My task', '#ff0000');
+      result.current.addTask('My task', '#ff0000', 1);
     });
     const id = result.current.tasks[0].id;
 
@@ -53,7 +54,7 @@ describe('useTasks', () => {
     const { result } = renderHook(() => useTasks());
 
     act(() => {
-      result.current.addTask('My task', '#ff0000');
+      result.current.addTask('My task', '#ff0000', 1);
     });
     const id = result.current.tasks[0].id;
 
@@ -70,7 +71,7 @@ describe('useTasks', () => {
     const { result } = renderHook(() => useTasks());
 
     act(() => {
-      result.current.addTask('My task', '#ff0000');
+      result.current.addTask('My task', '#ff0000', 1);
     });
     const id = result.current.tasks[0].id;
 
@@ -80,5 +81,11 @@ describe('useTasks', () => {
 
     expect(result.current.tasks[0].name).toBe('New name');
     expect(result.current.tasks[0].color).toBe('#ff0000');
+
+    act(() => {
+      result.current.updateTask(id, { estimatedPomodoros: 5 });
+    });
+
+    expect(result.current.tasks[0].estimatedPomodoros).toBe(5);
   });
 });

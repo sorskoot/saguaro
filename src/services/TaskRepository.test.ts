@@ -26,6 +26,7 @@ function makeTask(id: string, overrides: Partial<Task> = {}): Task {
     id,
     name: `Task ${id}`,
     color: '#ff0000',
+    estimatedPomodoros: 1,
     createdAt: new Date().toISOString(),
     archived: false,
     ...overrides,
@@ -98,10 +99,19 @@ describe('TaskRepository', () => {
   });
 
   it('migrates existing projects from local storage to tasks', () => {
-    const task = makeTask('t1');
+    const task = makeTask('t1', { estimatedPomodoros: undefined });
     storage.set('pomodoro_projects', [task]);
 
-    expect(repo.findAll()).toEqual([task]);
-    expect(storage.get('pomodoro_tasks')).toEqual([task]);
+    const migratedTask = { ...task, estimatedPomodoros: 1 };
+    expect(repo.findAll()).toEqual([migratedTask]);
+    expect(storage.get('pomodoro_tasks')).toEqual([migratedTask]);
+  });
+
+  it('fills in the estimate for existing tasks without one', () => {
+    const task = makeTask('t1', { estimatedPomodoros: undefined });
+    storage.set('pomodoro_tasks', [task]);
+
+    expect(repo.findAll()).toEqual([{ ...task, estimatedPomodoros: 1 }]);
+    expect(storage.get('pomodoro_tasks')).toEqual([{ ...task, estimatedPomodoros: 1 }]);
   });
 });

@@ -19,6 +19,15 @@
   transform: translateY(-1px);
 }
 
+.row {
+  cursor: pointer;
+}
+
+.selected {
+  border-color: var(--color-work);
+  box-shadow: 0 0 0 1px var(--color-work);
+}
+
 /* ─── Color dot ──────────────────────────────────────────── */
 .dot {
   width: 12px;
@@ -44,6 +53,16 @@
 .sessionCount {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.estimate {
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
   white-space: nowrap;
   flex-shrink: 0;
 }

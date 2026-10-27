@@ -25,6 +25,7 @@ const sampleTask: Task = {
   id: 'task-1',
   name: 'Write tests',
   color: '#aabbcc',
+  estimatedPomodoros: 2,
   createdAt: '2024-01-01T00:00:00.000Z',
   archived: false,
 };

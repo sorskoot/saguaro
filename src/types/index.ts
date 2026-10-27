@@ -22,6 +22,7 @@ export interface Task {
   id: string;
   name: string;
   color: string;
+  estimatedPomodoros: number;
   createdAt: string;
   archived: boolean;
 }

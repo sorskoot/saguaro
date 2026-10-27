@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useSelectedTask } from '../hooks/useSelectedTask';
 import { useSettings } from '../hooks/useSettings';
 import { useTimer } from '../hooks/useTimer';
 import { useTasks } from '../hooks/useTasks';
@@ -20,7 +21,7 @@ export default function TimerPage() {
   const { settings } = useSettings();
   const { tasks } = useTasks();
   const { addSession, completeSession } = usePomodoros();
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const { selectedTaskId, setSelectedTaskId } = useSelectedTask();
 
   const handleComplete = useCallback(
     (completedMode: SessionType) => {

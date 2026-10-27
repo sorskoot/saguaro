@@ -14,8 +14,9 @@ export interface UseTasksResult {
      * Creates a new task and persists it.
      * @param name Task display name.
      * @param color Task color value.
+     * @param estimatedPomodoros Number of work sessions planned for the task.
      */
-    addTask: (name: string, color: string) => void;
+    addTask: (name: string, color: string, estimatedPomodoros: number) => Task;
 
     /**
      * Updates an existing task. If the id is not found, the partial is stored as a new task.
@@ -57,16 +58,18 @@ export function useTasks(): UseTasksResult {
     const tasks = allTasks.filter((task) => !task.archived);
 
     const addTask = useCallback(
-        (name: string, color: string) => {
+        (name: string, color: string, estimatedPomodoros: number) => {
             const task: Task = {
                 id: generateId(),
                 name,
                 color,
+                estimatedPomodoros,
                 createdAt: new Date().toISOString(),
                 archived: false,
             };
             repo.save(task);
             setAllTasks((prev) => [...prev, task]);
+            return task;
         },
         [repo],
     );

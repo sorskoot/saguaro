@@ -8,14 +8,35 @@ const LEGACY_PROJECTS_KEY = 'pomodoro_projects';
 export class TaskRepository implements IRepository<Task> {
   constructor(private readonly storage: IStorageService) {}
 
+  private normalize(tasks: Task[]): Task[] {
+    return tasks.map((task) => ({
+      ...task,
+      estimatedPomodoros:
+        Number.isInteger(task.estimatedPomodoros) && task.estimatedPomodoros > 0
+          ? task.estimatedPomodoros
+          : 1,
+    }));
+  }
+
   private load(): Task[] {
     const tasks = this.storage.get<Task[]>(TASKS_KEY);
-    if (tasks !== null) return tasks;
+    if (tasks !== null) {
+      const normalizedTasks = this.normalize(tasks);
+      if (
+        normalizedTasks.some(
+          (task, index) => task.estimatedPomodoros !== tasks[index].estimatedPomodoros,
+        )
+      ) {
+        this.persist(normalizedTasks);
+      }
+      return normalizedTasks;
+    }
 
     const legacyTasks = this.storage.get<Task[]>(LEGACY_PROJECTS_KEY);
     if (legacyTasks !== null) {
-      this.persist(legacyTasks);
-      return legacyTasks;
+      const normalizedTasks = this.normalize(legacyTasks);
+      this.persist(normalizedTasks);
+      return normalizedTasks;
     }
 
     return [];
