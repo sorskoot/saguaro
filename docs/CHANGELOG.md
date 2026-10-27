@@ -23,5 +23,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Timer circles match the selected task's estimated Pomodoros and fill using its
+  completed work sessions. Without a task, the existing four-circle cycle remains.
+
 - `.github/workflows/ci.yml`: CI workflow running `npm ci`, `npm run build`, and
   `npm test` on Node 22 for every push and pull request.

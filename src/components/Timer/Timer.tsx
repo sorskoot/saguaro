@@ -9,6 +9,7 @@ interface TimerProps {
   isRunning: boolean;
   mode: SessionType;
   pomodoroCount: number;
+  estimatedPomodoros?: number;
   onStart: () => void;
   onPause: () => void;
   onReset: () => void;
@@ -21,7 +22,6 @@ const MODE_LABELS: Record<SessionType, string> = {
   'long-break': 'Long Break',
 };
 
-// Total dots shown matches the long break interval (4 pomodoros per cycle).
 const DOTS_COUNT = 4;
 
 export default function Timer({
@@ -30,13 +30,17 @@ export default function Timer({
   isRunning,
   mode,
   pomodoroCount,
+  estimatedPomodoros,
   onStart,
   onPause,
   onReset,
   onSkip,
 }: TimerProps) {
   const progress = totalSeconds > 0 ? secondsLeft / totalSeconds : 0;
-  const filledDots = Math.min(pomodoroCount % DOTS_COUNT, DOTS_COUNT);
+  const dotsCount = estimatedPomodoros ?? DOTS_COUNT;
+  const filledDots = estimatedPomodoros === undefined
+    ? pomodoroCount % DOTS_COUNT
+    : Math.min(pomodoroCount, dotsCount);
 
   return (
     <div className={styles.container}>
@@ -63,10 +67,15 @@ export default function Timer({
         </button>
       </div>
 
-      <div className={styles.dots}>
-        {Array.from({ length: DOTS_COUNT }).map((_, i) => (
+      <div
+        className={styles.dots}
+        role="img"
+        aria-label={`${filledDots} of ${dotsCount} ${estimatedPomodoros === undefined ? 'cycle' : 'task'} Pomodoros completed`}
+      >
+        {Array.from({ length: dotsCount }).map((_, i) => (
           <span
             key={i}
+            aria-hidden="true"
             className={`${styles.dot} ${i < filledDots ? styles.dotFilled : styles.dotEmpty}`}
           >
             {i < filledDots ? '●' : '○'}

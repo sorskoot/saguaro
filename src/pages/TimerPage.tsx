@@ -20,7 +20,7 @@ function getTotalSeconds(mode: SessionType, settings: Settings): number {
 export default function TimerPage() {
   const { settings } = useSettings();
   const { tasks } = useTasks();
-  const { addSession, completeSession } = usePomodoros();
+  const { sessions, addSession, completeSession } = usePomodoros();
   const { selectedTaskId, setSelectedTaskId } = useSelectedTask();
 
   const handleComplete = useCallback(
@@ -35,6 +35,13 @@ export default function TimerPage() {
   const timer = useTimer({ settings, onComplete: handleComplete });
 
   const totalSeconds = getTotalSeconds(timer.mode, settings);
+  const selectedTask = tasks.find((task) => task.id === selectedTaskId);
+  const completedPomodoros = selectedTask
+    ? sessions.filter(
+        (session) =>
+          session.taskId === selectedTask.id && session.type === 'work' && session.completed,
+      ).length
+    : timer.pomodoroCount;
 
   return (
     <div className={styles.page}>
@@ -44,7 +51,8 @@ export default function TimerPage() {
         totalSeconds={totalSeconds}
         isRunning={timer.isRunning}
         mode={timer.mode}
-        pomodoroCount={timer.pomodoroCount}
+        pomodoroCount={completedPomodoros}
+        estimatedPomodoros={selectedTask?.estimatedPomodoros}
         onStart={timer.start}
         onPause={timer.pause}
         onReset={timer.reset}
