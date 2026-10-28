@@ -6,7 +6,7 @@ import type { Task } from '../types';
 
 export interface UseTasksResult {
     /**
-     * Non-archived tasks.
+     * Non-archived tasks, or all tasks when includeArchived is enabled.
      */
     tasks: Task[];
 
@@ -40,9 +40,9 @@ export interface UseTasksResult {
 
 /**
  * Manages tasks via {@link TaskRepository}.
- * Maintains an internal list of all tasks (including archived) and exposes only active ones.
+ * Maintains an internal list of all tasks (including archived) and defaults to exposing active ones.
  */
-export function useTasks(): UseTasksResult {
+export function useTasks(includeArchived = false): UseTasksResult {
     const repoRef = useRef<TaskRepository | null>(null);
     if (repoRef.current === null) {
         repoRef.current = new TaskRepository(getStorageService());
@@ -54,8 +54,7 @@ export function useTasks(): UseTasksResult {
         repo.findAll(),
     );
 
-    // Only expose non-archived tasks to consumers.
-    const tasks = allTasks.filter((task) => !task.archived);
+    const tasks = includeArchived ? allTasks : allTasks.filter((task) => !task.archived);
 
     const addTask = useCallback(
         (name: string, color: string, estimatedPomodoros: number) => {

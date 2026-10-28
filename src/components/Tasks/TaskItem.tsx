@@ -22,13 +22,13 @@ export default function TaskItem({
 }: TaskItemProps) {
   return (
     <div
-      className={`${styles.row} ${selected ? styles.selected : ''}`}
-      onClick={onSelect}
-      role="button"
-      aria-pressed={selected}
-      tabIndex={0}
+      className={`${styles.row} ${task.archived ? styles.archived : selected ? styles.selected : ''}`}
+      onClick={task.archived ? undefined : onSelect}
+      role={task.archived ? undefined : 'button'}
+      aria-pressed={task.archived ? undefined : selected}
+      tabIndex={task.archived ? undefined : 0}
       onKeyDown={(e) => {
-        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+        if (!task.archived && e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
           e.preventDefault();
           onSelect();
         }
@@ -41,6 +41,7 @@ export default function TaskItem({
       />
       <span className={styles.name} title={task.name}>
         {task.name}
+        {task.archived && <span className={styles.archivedLabel}> (Archived)</span>}
       </span>
       <span className={styles.estimate}>
         {task.estimatedPomodoros} {task.estimatedPomodoros === 1 ? 'Pomodoro' : 'Pomodoros'}
@@ -52,14 +53,16 @@ export default function TaskItem({
         <button className={styles.iconBtn} onClick={onEdit} type="button" title="Edit task">
           ✏️
         </button>
-        <button
-          className={styles.iconBtn}
-          onClick={onArchive}
-          type="button"
-          title="Archive task"
-        >
-          📦
-        </button>
+        {!task.archived && (
+          <button
+            className={styles.iconBtn}
+            onClick={onArchive}
+            type="button"
+            title="Archive task"
+          >
+            📦
+          </button>
+        )}
         <button
           className={`${styles.iconBtn} ${styles.deleteBtn}`}
           onClick={onDelete}

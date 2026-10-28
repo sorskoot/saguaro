@@ -8,6 +8,10 @@ On the Timer page, windows at most 550px wide and 300px high show only the count
 centered and scaled to fit. The timer keeps running; enlarge either dimension beyond
 that breakpoint to restore navigation and controls.
 
+On the Tasks page, enable **Show archived tasks** to include archived tasks in the list.
+Archived tasks are labeled and can be edited or deleted, but cannot be selected for the timer.
+They remain hidden by default and in the timer's task selector.
+
 ## Development
 
 Install dependencies and start the dev server:

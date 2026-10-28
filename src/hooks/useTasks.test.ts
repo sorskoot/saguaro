@@ -50,6 +50,26 @@ describe('useTasks', () => {
     expect(stored[0].archived).toBe(true);
   });
 
+  it('includes archived tasks on request and filters them again when disabled', () => {
+    const { result, rerender } = renderHook(
+      ({ includeArchived }) => useTasks(includeArchived),
+      { initialProps: { includeArchived: false } },
+    );
+    act(() => {
+      result.current.addTask('My task', '#ff0000', 1);
+    });
+    const id = result.current.tasks[0].id;
+    act(() => {
+      result.current.archiveTask(id);
+    });
+    expect(result.current.tasks).toHaveLength(0);
+    rerender({ includeArchived: true });
+    expect(result.current.tasks).toHaveLength(1);
+    expect(result.current.tasks[0].archived).toBe(true);
+    rerender({ includeArchived: false });
+    expect(result.current.tasks).toHaveLength(0);
+  });
+
   it('deleteTask removes the task from storage entirely', () => {
     const { result } = renderHook(() => useTasks());
 

@@ -23,6 +23,15 @@
   cursor: pointer;
 }
 
+.archived {
+  cursor: default;
+}
+
+.archivedLabel {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
 .selected {
   border-color: var(--color-work);
   box-shadow: 0 0 0 1px var(--color-work);

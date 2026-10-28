@@ -12,7 +12,8 @@ type FormState =
   | { mode: 'edit'; task: Task };
 
 export default function TasksPage() {
-  const { tasks, addTask, updateTask, archiveTask, deleteTask } = useTasks();
+  const [showArchived, setShowArchived] = useState(false);
+  const { tasks, addTask, updateTask, archiveTask, deleteTask } = useTasks(showArchived);
   const { sessions } = usePomodoros();
   const { selectedTaskId, setSelectedTaskId } = useSelectedTask();
   const [formState, setFormState] = useState<FormState>({ mode: 'hidden' });
@@ -64,6 +65,20 @@ export default function TasksPage() {
           </button>
         )}
       </div>
+
+      <label className={styles.archiveToggle}>
+        <input
+          type="checkbox"
+          checked={showArchived}
+          onChange={(event) => {
+            setShowArchived(event.target.checked);
+            if (!event.target.checked && formState.mode === 'edit' && formState.task.archived) {
+              setFormState({ mode: 'hidden' });
+            }
+          }}
+        />
+        Show archived tasks
+      </label>
 
       {formState.mode === 'add' && (
         <TaskForm
