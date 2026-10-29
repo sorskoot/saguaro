@@ -9,12 +9,12 @@ describe('TaskForm', () => {
     fireEvent.change(screen.getByLabelText('Task name'), {
       target: { value: 'Write tests' },
     });
-    fireEvent.change(screen.getByLabelText('Estimated Pomodoros'), {
+    fireEvent.change(screen.getByLabelText('Estimated Spikes'), {
       target: { value: '4' },
     });
     fireEvent.submit(container.querySelector('form')!);
 
-    expect(onSubmit).toHaveBeenCalledWith('Write tests', '#e74c3c', 4);
+    expect(onSubmit).toHaveBeenCalledWith('Write tests', '#8c8442', 4);
   });
 
   it('prefills the estimate when editing a task', () => {
@@ -25,7 +25,7 @@ describe('TaskForm', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Estimated Pomodoros')).toHaveValue(3);
+    expect(screen.getByLabelText('Estimated Spikes')).toHaveValue(3);
   });
 
   it('requires a positive whole-number estimate', () => {
@@ -35,7 +35,7 @@ describe('TaskForm', () => {
     fireEvent.change(screen.getByLabelText('Task name'), {
       target: { value: 'Write tests' },
     });
-    fireEvent.change(screen.getByLabelText('Estimated Pomodoros'), {
+    fireEvent.change(screen.getByLabelText('Estimated Spikes'), {
       target: { value: '1.5' },
     });
     fireEvent.submit(container.querySelector('form')!);

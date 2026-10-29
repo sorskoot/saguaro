@@ -1,19 +1,42 @@
 :root {
-  /* Colors */
-  --color-bg: #1a1a2e;
-  --color-surface: #16213e;
-  --color-surface-raised: #0f3460;
-  --color-border: rgba(255, 255, 255, 0.08);
+  /* Brand colors */
+  --color-saguaro: #655F2D;
+  --color-desert-purple: #3A2E66;
+  --color-desert-sand: #E6E2C3;
 
-  /* Mode accent colors */
-  --color-work: #e94560;
-  --color-short-break: #0f9b58;
-  --color-long-break: #4a90d9;
+  /* Backgrounds */
+  --color-background: #191D1B;
+  --color-background-secondary: #222925;
 
   /* Text */
-  --color-text-primary: #eaeaea;
-  --color-text-secondary: #9a9ab0;
-  --color-text-muted: #5c5c7a;
+  --color-text-primary: #E6E2C3;
+  --color-text-secondary: #B7B5A0;
+
+  /* Borders */
+  --color-border: #363932;
+
+  /* Semantic aliases */
+  --color-primary: var(--color-saguaro);
+  --color-accent: var(--color-desert-purple);
+  --color-surface: var(--color-background-secondary);
+  --color-text: var(--color-text-primary);
+
+  /* Derived tones (not part of the brand palette; keep them close to it) */
+  --color-saguaro-bright: #8C8442;
+  --color-desert-purple-bright: #5A4A8F;
+  --color-surface-raised: #2C332E;
+  --color-text-muted: #858372;
+  --color-danger: #9C5238;
+  --color-danger-text: #D08A6C;
+
+  /* App aliases */
+  --color-bg: var(--color-background);
+  --color-on-primary: var(--color-desert-sand);
+
+  /* Mode accent colors */
+  --color-work: var(--color-saguaro);
+  --color-short-break: var(--color-desert-purple);
+  --color-long-break: var(--color-desert-purple-bright);
 
   /* Spacing */
   --space-xs: 4px;

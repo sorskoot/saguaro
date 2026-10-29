@@ -33,9 +33,10 @@
   gap: var(--space-sm);
 }
 
-.brand::before {
-  content: "🍅";
-  font-size: 1.1em;
+.logo {
+  width: 1.75em;
+  height: 1.75em;
+  flex-shrink: 0;
 }
 
 /* ─── Nav links ──────────────────────────────────────────── */
@@ -65,12 +66,12 @@
 
 .navLink:hover {
   color: var(--color-text-primary);
-  background-color: rgba(255, 255, 255, 0.06);
+  background-color: rgba(230, 226, 195, 0.06);
 }
 
 /* Active state: pill uses the current mode accent (set from JS via data attribute) */
 .navLinkActive {
-  color: #fff;
+  color: var(--color-on-primary);
   background-color: var(--color-surface-raised);
   border-color: var(--color-border);
 }

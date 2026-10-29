@@ -1,7 +1,7 @@
 :root {
   color-scheme: dark;
-  background: #1a1a2e;
-  color: #eaeaea;
+  background: #191D1B;
+  color: #E6E2C3;
   font-family: 'Segoe UI', sans-serif;
 }
 
@@ -17,11 +17,11 @@ body {
   justify-content: center;
   box-sizing: border-box;
   padding: 12px;
-  border-top: 3px solid #e94560;
+  border-top: 3px solid #655F2D;
 }
 
 .floating-timer-label {
-  color: #9a9ab0;
+  color: #B7B5A0;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.16em;

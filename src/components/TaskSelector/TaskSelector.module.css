@@ -38,13 +38,13 @@
 }
 
 .select:hover {
-  border-color: rgba(255, 255, 255, 0.18);
+  border-color: rgba(230, 226, 195, 0.18);
 }
 
 .select:focus {
   outline: none;
-  border-color: var(--color-work);
-  box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+  border-color: var(--color-saguaro-bright);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-saguaro-bright) 20%, transparent);
 }
 
 .select option {

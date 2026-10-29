@@ -45,7 +45,7 @@ export default function TimerPictureInPicture({ secondsLeft }: { secondsLeft: nu
         openedWindow.close();
         return;
       }
-      openedWindow.document.title = 'Pomodoro timer';
+      openedWindow.document.title = 'Saguaro timer';
       const stylesheet = openedWindow.document.createElement('style');
       stylesheet.textContent = pictureInPictureStyles;
       openedWindow.document.head.append(stylesheet);
@@ -78,8 +78,8 @@ export default function TimerPictureInPicture({ secondsLeft }: { secondsLeft: nu
       </button>
       {error && <p role="alert">{error}</p>}
       {pipWindow && createPortal(
-        <main className="floating-timer" aria-label="Pomodoro timer">
-          <span className="floating-timer-label">Pomodoro</span>
+        <main className="floating-timer" aria-label="Saguaro timer">
+          <span className="floating-timer-label">Spike</span>
           <div className="floating-timer-time" role="timer" aria-label="Time remaining">
             {formatTime(secondsLeft)}
           </div>

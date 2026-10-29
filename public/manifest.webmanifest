@@ -1,12 +1,12 @@
 {
-    "name": "Sorskoot Pomodoro",
-    "short_name": "Pomodoro",
-    "description": "A simple pomodoro timer to track focused work sessions.",
-    "start_url": "/sorskoot-pomodoro",
-    "scope": "/sorskoot-pomodoro",
+    "name": "Saguaro",
+    "short_name": "Saguaro",
+    "description": "A focus timer that works well alongside AI agents, and just as well without them.",
+    "start_url": "/saguaro",
+    "scope": "/saguaro",
     "display": "standalone",
-    "background_color": "#111827",
-    "theme_color": "#dc2626",
+    "background_color": "#191D1B",
+    "theme_color": "#191D1B",
     "icons": [
         {
             "src": "icons/icon-192.svg",

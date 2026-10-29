@@ -107,25 +107,25 @@
 
 .importBtn:hover {
   color: var(--color-text-primary);
-  border-color: rgba(255, 255, 255, 0.18);
-  background-color: rgba(255, 255, 255, 0.04);
+  border-color: rgba(230, 226, 195, 0.18);
+  background-color: rgba(230, 226, 195, 0.04);
   transform: translateY(-1px);
 }
 
 /* ─── Danger zone section ────────────────────────────────── */
 .dangerSection {
-  border-color: rgba(233, 69, 96, 0.3);
-  background-color: rgba(233, 69, 96, 0.04);
+  border-color: color-mix(in srgb, var(--color-danger) 30%, transparent);
+  background-color: color-mix(in srgb, var(--color-danger) 4%, transparent);
 }
 
 .dangerTitle {
-  color: var(--color-work);
+  color: var(--color-danger-text);
 }
 
 .dangerBtn {
   padding: var(--space-sm) var(--space-lg);
-  background-color: var(--color-work);
-  color: #fff;
+  background-color: var(--color-danger);
+  color: var(--color-on-primary);
   border: none;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);

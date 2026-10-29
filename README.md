@@ -1,6 +1,6 @@
-# sorskoot-pomodoro
+# Saguaro
 
-A Progressive Web App (PWA) Pomodoro timer built with React, TypeScript, and Vite.
+A Progressive Web App (PWA) focus timer built with React, TypeScript, and Vite.
 
 The layout adapts to phones and tablets with scalable timer controls, touch-friendly navigation,
 wrapping task and history rows, and stacked settings actions on small screens.
@@ -45,10 +45,10 @@ The output is written to `dist/`.
 
 ### GitHub Pages
 
-The app is deployed to GitHub Pages at `/sorskoot-pomodoro/`. Pass the base path at build time:
+The app is deployed to GitHub Pages at `/saguaro/`. Pass the base path at build time:
 
 ```bash
-npm run build -- --base=/sorskoot-pomodoro/
+npm run build -- --base=/saguaro/
 ```
 
 The CI/CD pipeline (`.github/workflows/deploy.yml`) runs this automatically on pushes to `main`.

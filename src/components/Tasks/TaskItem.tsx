@@ -44,7 +44,7 @@ export default function TaskItem({
         {task.archived && <span className={styles.archivedLabel}> (Archived)</span>}
       </span>
       <span className={styles.estimate}>
-        {task.estimatedPomodoros} {task.estimatedPomodoros === 1 ? 'Pomodoro' : 'Pomodoros'}
+        {task.estimatedPomodoros} {task.estimatedPomodoros === 1 ? 'Spike' : 'Spikes'}
       </span>
       <span className={styles.sessionCount}>
         {sessionCount} {sessionCount === 1 ? 'session' : 'sessions'}

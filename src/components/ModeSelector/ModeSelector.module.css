@@ -32,26 +32,26 @@
 
 .tab:hover:not(.active) {
   color: var(--color-text-primary);
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(230, 226, 195, 0.05);
 }
 
 /* ─── Active tab: work (default) ─────────────────────────── */
 .active {
-  color: #fff;
+  color: var(--color-on-primary);
   background-color: var(--color-work);
-  box-shadow: 0 2px 10px rgba(233, 69, 96, 0.45);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-saguaro-bright) 45%, transparent);
 }
 
 /* Short-break mode: add this class alongside .active from JS */
 .shortBreakActive {
   background-color: var(--color-short-break);
-  box-shadow: 0 2px 10px rgba(15, 155, 88, 0.45);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-desert-purple-bright) 45%, transparent);
 }
 
 /* Long-break mode */
 .longBreakActive {
   background-color: var(--color-long-break);
-  box-shadow: 0 2px 10px rgba(74, 144, 217, 0.45);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-desert-purple-bright) 45%, transparent);
 }
 
 /* ─── Responsive ─────────────────────────────────────────── */

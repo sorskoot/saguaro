@@ -23,7 +23,7 @@
 .valueDisplay {
   font-size: var(--font-size-sm);
   font-weight: 700;
-  color: var(--color-work);
+  color: var(--color-saguaro-bright);
   min-width: 5rem;
   text-align: right;
   font-family: ui-monospace, monospace;
@@ -55,14 +55,14 @@
   border-radius: 50%;
   background: var(--color-work);
   cursor: pointer;
-  box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-saguaro-bright) 20%, transparent);
   transition:
     box-shadow var(--transition-fast),
     transform var(--transition-fast);
 }
 
 .slider::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 0 5px rgba(233, 69, 96, 0.3);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-saguaro-bright) 30%, transparent);
   transform: scale(1.15);
 }
 
@@ -74,7 +74,7 @@
   border-radius: 50%;
   background: var(--color-work);
   cursor: pointer;
-  box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-saguaro-bright) 20%, transparent);
 }
 
 /* Firefox track */

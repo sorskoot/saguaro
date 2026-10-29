@@ -74,7 +74,7 @@
   left: 3px;
   width: 18px;
   height: 18px;
-  background: #fff;
+  background: var(--color-desert-sand);
   border-radius: 50%;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   transition: transform var(--transition-normal);
@@ -86,5 +86,5 @@
 
 /* ─── Focus ring on track ────────────────────────────────── */
 .checkbox:focus-visible + .toggle .track {
-  box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.35);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-saguaro-bright) 35%, transparent);
 }

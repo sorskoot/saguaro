@@ -16,12 +16,12 @@ describe('PWA_BASE_PATH trailing-slash normalisation', () => {
   });
 
   it('adds a trailing slash when BASE_URL has none', async () => {
-    vi.stubEnv('BASE_URL', '/sorskoot-pomodoro');
+    vi.stubEnv('BASE_URL', '/saguaro');
     // Reset module registry so the re-import below re-evaluates the constant
     // with the stubbed BASE_URL value.
     vi.resetModules();
     const { PWA_BASE_PATH: freshBasePath } = await import('./pwa');
-    expect(freshBasePath).toBe('/sorskoot-pomodoro/');
+    expect(freshBasePath).toBe('/saguaro/');
   });
 });
 

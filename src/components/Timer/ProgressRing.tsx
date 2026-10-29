@@ -2,14 +2,14 @@ interface ProgressRingProps {
   progress: number;     // 0 to 1
   size?: number;        // default 280
   strokeWidth?: number; // default 10
-  color?: string;       // default '#e74c3c'
+  color?: string;       // default var(--color-saguaro-bright)
 }
 
 export default function ProgressRing({
   progress,
   size = 280,
   strokeWidth = 10,
-  color = '#e74c3c',
+  color = 'var(--color-saguaro-bright)',
 }: ProgressRingProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -30,7 +30,7 @@ export default function ProgressRing({
         cy={center}
         r={radius}
         fill="none"
-        stroke="rgba(0,0,0,0.1)"
+        stroke="var(--color-border)"
         strokeWidth={strokeWidth}
       />
       {/* Progress arc */}

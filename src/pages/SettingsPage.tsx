@@ -42,7 +42,7 @@ export default function SettingsPage() {
         <h2 className={styles.sectionTitle}>Timer durations</h2>
         <div className={styles.fields}>
           <DurationField
-            label="Work session"
+            label="Spike"
             value={settings.workDuration}
             min={1}
             max={90}
@@ -67,7 +67,7 @@ export default function SettingsPage() {
             value={settings.longBreakInterval}
             min={2}
             max={10}
-            unit="pomodoros"
+            unit="Spikes"
             onChange={(v) => updateSettings({ longBreakInterval: v })}
           />
         </div>
@@ -79,13 +79,13 @@ export default function SettingsPage() {
         <div className={styles.fields}>
           <ToggleField
             label="Auto-start breaks"
-            description="Automatically start the break timer after a work session ends."
+            description="Automatically start the break timer after a Spike ends."
             checked={settings.autoStartBreaks}
             onChange={(v) => updateSettings({ autoStartBreaks: v })}
           />
           <ToggleField
-            label="Auto-start pomodoros"
-            description="Automatically start the next work session after a break ends."
+            label="Auto-start Spikes"
+            description="Automatically start the next Spike after a break ends."
             checked={settings.autoStartPomodoros}
             onChange={(v) => updateSettings({ autoStartPomodoros: v })}
           />

@@ -38,15 +38,15 @@ In development (`npm run dev`), Vite sets `BASE_URL` to `/`.
 
 ## Production — GitHub Pages
 
-GitHub Pages serves the app under `/sorskoot-pomodoro/`. Pass the base path to
+GitHub Pages serves the app under `/saguaro/`. Pass the base path to
 Vite at build time:
 
 ```bash
-npm run build -- --base=/sorskoot-pomodoro/
+npm run build -- --base=/saguaro/
 ```
 
-- `PWA_BASE_PATH` = `/sorskoot-pomodoro/`
-- Service worker registered at `/sorskoot-pomodoro/sw.js` with scope `/sorskoot-pomodoro/`
+- `PWA_BASE_PATH` = `/saguaro/`
+- Service worker registered at `/saguaro/sw.js` with scope `/saguaro/`
 
 The deploy workflow (`.github/workflows/deploy.yml`) runs this command
 automatically on pushes to `main` and uploads `dist/` as the Pages artifact.
@@ -58,7 +58,7 @@ automatically on pushes to `main` and uploads `dist/` as the Pages artifact.
 npm ci
 
 # 2. Build with the correct base path
-npm run build -- --base=/sorskoot-pomodoro/
+npm run build -- --base=/saguaro/
 
 # 3. Deploy dist/ to the gh-pages branch or Pages artifact upload
 #    (handled automatically by the deploy workflow)

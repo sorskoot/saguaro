@@ -18,7 +18,7 @@ function session(id: string, taskId: string | null, type: SessionType = 'work', 
 }
 
 function expectDots(total: number, filled: number, scope = 'task') {
-  const dots = screen.getByRole('img', { name: `${filled} of ${total} ${scope} Pomodoros completed` });
+  const dots = screen.getByRole('img', { name: `${filled} of ${total} ${scope} Spikes completed` });
   expect(dots.children).toHaveLength(total);
   expect(within(dots).queryAllByText('●')).toHaveLength(filled);
   expect(within(dots).queryAllByText('○')).toHaveLength(total - filled);
@@ -45,7 +45,7 @@ beforeEach(() => {
   });
 });
 
-describe('TimerPage Pomodoro circles', () => {
+describe('TimerPage Spike circles', () => {
   it('uses the task estimate and only its completed work sessions', () => {
     render(<TimerPage />);
     expectDots(3, 1);
