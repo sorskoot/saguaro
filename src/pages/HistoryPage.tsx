@@ -73,7 +73,7 @@ export default function HistoryPage() {
       </div>
 
       {dayGroups.length === 0 && (
-        <p className={styles.empty}>No sessions found. Complete a pomodoro to see history.</p>
+        <p className={styles.empty}>No sessions found. Complete a Spike to see history.</p>
       )}
 
       <div className={styles.groups}>

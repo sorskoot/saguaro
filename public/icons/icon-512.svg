@@ -1,6 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#111827" />
-  <circle cx="256" cy="278" r="164" fill="#dc2626" />
-  <path d="M251 100c50 0 83 25 103 59-57-13-103-7-140 20 0-47 8-79 37-79Z" fill="#16a34a" />
-  <circle cx="196" cy="278" r="22" fill="#fef2f2" />
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3A2E66" />
+      <stop offset="1" stop-color="#222925" />
+    </linearGradient>
+    <clipPath id="tile">
+      <rect width="192" height="192" rx="32" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect width="192" height="192" fill="url(#sky)" />
+    <circle cx="96" cy="90" r="50" fill="#E6E2C3" />
+    <g fill="none" stroke="#655F2D" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M96 160V50" stroke-width="24" />
+      <path d="M96 118H75Q64 118 64 107V82M96 102H117Q128 102 128 91V66" stroke-width="16" />
+    </g>
+    <path d="M91 62v76M101 62v76" stroke="#4E4A22" stroke-width="2.5" stroke-linecap="round" />
+    <path d="M0 150Q96 130 192 150V192H0Z" fill="#191D1B" />
+  </g>
 </svg>

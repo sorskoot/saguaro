@@ -9,18 +9,18 @@
   border-left: 3px solid var(--color-work);
   background-color: transparent;
   transition: background-color var(--transition-fast);
-  /* Work sessions get the red left border by default.
+  /* Work sessions get the saguaro left border by default.
      Wrap in a data-type attribute from the parent to vary. */
 }
 
 .row:hover {
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgba(230, 226, 195, 0.03);
 }
 
-/* Break sessions: cool green left border */
+/* Break sessions: desert purple left border */
 .row[data-type="short-break"],
 .row[data-type="long-break"] {
-  border-left-color: var(--color-short-break);
+  border-left-color: var(--color-desert-purple-bright);
 }
 
 /* ─── Icon ───────────────────────────────────────────────── */
@@ -71,15 +71,15 @@
 }
 
 .badgeCompleted {
-  background-color: rgba(15, 155, 88, 0.15);
-  color: var(--color-short-break);
-  border: 1px solid rgba(15, 155, 88, 0.25);
+  background-color: color-mix(in srgb, var(--color-saguaro-bright) 15%, transparent);
+  color: var(--color-saguaro-bright);
+  border: 1px solid color-mix(in srgb, var(--color-saguaro-bright) 25%, transparent);
 }
 
 .badgeIncomplete {
-  background-color: rgba(92, 92, 122, 0.15);
+  background-color: color-mix(in srgb, var(--color-text-muted) 15%, transparent);
   color: var(--color-text-muted);
-  border: 1px solid rgba(92, 92, 122, 0.2);
+  border: 1px solid color-mix(in srgb, var(--color-text-muted) 20%, transparent);
 }
 
 @media (max-width: 600px) {

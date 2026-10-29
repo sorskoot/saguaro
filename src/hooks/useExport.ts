@@ -58,7 +58,7 @@ export function useExport({
         const json = JSON.stringify(data, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        const filename = `pomodoro-backup-${formatDate(new Date())}.json`;
+        const filename = `saguaro-backup-${formatDate(new Date())}.json`;
 
         const anchor = document.createElement('a');
         anchor.href = url;

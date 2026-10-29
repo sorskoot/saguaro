@@ -64,7 +64,7 @@
   border-radius: var(--radius-full);
   border: none;
   background-color: var(--color-work);
-  color: #fff;
+  color: var(--color-on-primary);
   font-size: var(--font-size-lg);
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -74,13 +74,13 @@
     filter var(--transition-fast),
     transform var(--transition-fast),
     box-shadow var(--transition-fast);
-  box-shadow: 0 4px 20px rgba(233, 69, 96, 0.35);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--color-saguaro-bright) 35%, transparent);
 }
 
 .primaryBtn:hover {
   filter: brightness(1.12);
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(233, 69, 96, 0.5);
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--color-saguaro-bright) 50%, transparent);
 }
 
 .primaryBtn:active {
@@ -110,8 +110,8 @@
 
 .secondaryBtn:hover {
   color: var(--color-text-primary);
-  border-color: rgba(255, 255, 255, 0.22);
-  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(230, 226, 195, 0.22);
+  background-color: rgba(230, 226, 195, 0.06);
 }
 
 .pictureInPictureBtn {
@@ -125,11 +125,11 @@
 
 .pictureInPictureBtn:hover {
   color: var(--color-text-primary);
-  border-color: var(--color-work);
+  border-color: var(--color-saguaro-bright);
 }
 
 .pictureInPictureBtn:focus-visible {
-  outline: 2px solid var(--color-work);
+  outline: 2px solid var(--color-saguaro-bright);
   outline-offset: 4px;
 }
 
@@ -155,7 +155,7 @@
 }
 
 .dotFilled {
-  color: var(--color-work);
+  color: var(--color-saguaro-bright);
 }
 
 .dotEmpty {

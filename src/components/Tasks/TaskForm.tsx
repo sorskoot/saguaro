@@ -9,7 +9,7 @@ interface TaskFormProps {
   onCancel?: () => void;
 }
 
-const DEFAULT_COLOR = '#e74c3c';
+const DEFAULT_COLOR = '#8c8442';
 
 export default function TaskForm({ initial, onSubmit, onCancel }: TaskFormProps) {
   const [name, setName] = useState(initial?.name ?? '');
@@ -47,7 +47,7 @@ export default function TaskForm({ initial, onSubmit, onCancel }: TaskFormProps)
 
       <div className={styles.row}>
         <label className={styles.label} htmlFor="task-pomodoros">
-          Estimated Pomodoros
+          Estimated Spikes
         </label>
         <input
           id="task-pomodoros"

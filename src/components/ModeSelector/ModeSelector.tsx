@@ -7,7 +7,7 @@ interface ModeSelectorProps {
 }
 
 const TABS: { label: string; value: SessionType }[] = [
-    { label: 'Pomodoro', value: 'work' },
+    { label: 'Spike', value: 'work' },
     { label: 'Short Break', value: 'short-break' },
     { label: 'Long Break', value: 'long-break' },
 ];

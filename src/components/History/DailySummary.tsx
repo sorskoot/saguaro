@@ -27,7 +27,7 @@ export default function DailySummary({ date, sessions }: DailySummaryProps) {
       <div className={styles.stats}>
         <div className={styles.stat}>
           <span className={styles.statValue}>{completedWork.length}</span>
-          <span className={styles.statLabel}>Pomodoros</span>
+          <span className={styles.statLabel}>Spikes</span>
         </div>
         <div className={styles.stat}>
           <span className={styles.statValue}>{focusLabel}</span>

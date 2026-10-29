@@ -17,7 +17,7 @@ interface TimerProps {
 }
 
 const MODE_LABELS: Record<SessionType, string> = {
-  work: 'Work',
+  work: 'Spike',
   'short-break': 'Short Break',
   'long-break': 'Long Break',
 };
@@ -70,7 +70,7 @@ export default function Timer({
       <div
         className={styles.dots}
         role="img"
-        aria-label={`${filledDots} of ${dotsCount} ${estimatedPomodoros === undefined ? 'cycle' : 'task'} Pomodoros completed`}
+        aria-label={`${filledDots} of ${dotsCount} ${estimatedPomodoros === undefined ? 'cycle' : 'task'} Spikes completed`}
       >
         {Array.from({ length: dotsCount }).map((_, i) => (
           <span

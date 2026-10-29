@@ -62,14 +62,14 @@ function notifyCompletion(mode: SessionType): void {
 
     const modeLabel =
         mode === 'work'
-            ? 'Work session'
+            ? 'Spike'
             : mode === 'short-break'
               ? 'Short break'
               : 'Long break';
 
-    new Notification('Pomodoro finished', {
+    new Notification('Saguaro', {
         body: `${modeLabel} completed.`,
-        tag: 'pomodoro-complete',
+        tag: 'saguaro-complete',
     });
 }
 

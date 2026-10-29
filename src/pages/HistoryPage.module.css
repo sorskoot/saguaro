@@ -46,8 +46,8 @@
 }
 
 .filterSelect:focus {
-  border-color: var(--color-work);
-  box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.18);
+  border-color: var(--color-saguaro-bright);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-saguaro-bright) 18%, transparent);
 }
 
 .filterSelect option {

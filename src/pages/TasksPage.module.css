@@ -39,7 +39,7 @@
 .addBtn {
   padding: var(--space-sm) var(--space-lg);
   background-color: var(--color-work);
-  color: #fff;
+  color: var(--color-on-primary);
   border: none;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);

@@ -41,8 +41,8 @@
 }
 
 .input:focus {
-  border-color: var(--color-work);
-  box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.18);
+  border-color: var(--color-saguaro-bright);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-saguaro-bright) 18%, transparent);
 }
 
 /* ─── Color row ──────────────────────────────────────────── */
@@ -64,7 +64,7 @@
 }
 
 .colorInput:hover {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(230, 226, 195, 0.2);
 }
 
 .colorPreview {
@@ -85,7 +85,7 @@
 .submitBtn {
   padding: var(--space-sm) var(--space-lg);
   background-color: var(--color-work);
-  color: #fff;
+  color: var(--color-on-primary);
   border: none;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
@@ -120,8 +120,8 @@
 
 .cancelBtn:hover {
   color: var(--color-text-primary);
-  border-color: rgba(255, 255, 255, 0.18);
-  background-color: rgba(255, 255, 255, 0.04);
+  border-color: rgba(230, 226, 195, 0.18);
+  background-color: rgba(230, 226, 195, 0.04);
 }
 
 @media (max-width: 600px) {

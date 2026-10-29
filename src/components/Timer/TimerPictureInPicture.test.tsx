@@ -37,7 +37,7 @@ describe('TimerPictureInPicture', () => {
 
     await waitFor(() => expect(within(pipWindow.document.body).getByRole('timer')).toHaveTextContent('25:00'));
     expect(requestWindow).toHaveBeenCalledExactlyOnceWith({ width: 320, height: 180 });
-    expect(pipWindow.document.title).toBe('Pomodoro timer');
+    expect(pipWindow.document.title).toBe('Saguaro timer');
     expect(pipWindow.document.head.querySelector('style')?.textContent).toContain('.floating-timer');
     expect(screen.getByRole('button', { name: 'Close floating timer' })).toHaveAttribute('aria-pressed', 'true');
 

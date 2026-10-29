@@ -1,9 +1,10 @@
-const CACHE_NAME = 'sorskoot-pomodoro-v1';
+const CACHE_NAME = 'saguaro-v1';
 const OFFLINE_FALLBACK_URL = '/index.html';
 const APP_SHELL = [
     '/',
     OFFLINE_FALLBACK_URL,
     '/manifest.webmanifest',
+    '/favicon.svg',
     '/icons/icon-192.svg',
     '/icons/icon-512.svg',
 ];
