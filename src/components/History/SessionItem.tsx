@@ -1,8 +1,8 @@
-import type { PomodoroSession } from '../../types';
+import type { Session } from '../../types';
 import styles from './SessionItem.module.css';
 
 interface SessionItemProps {
-  session: PomodoroSession;
+  session: Session;
   taskName: string | null;
 }
 

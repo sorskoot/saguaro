@@ -2,13 +2,13 @@ import { useState, useRef, useCallback } from 'react';
 import { PomodoroRepository } from '../services/PomodoroRepository';
 import { getStorageService } from '../services/StorageService';
 import { generateId } from '../utils/id';
-import type { PomodoroSession, SessionType } from '../types';
+import type { Session, SessionType } from '../types';
 
 export interface UsePomodorosResult {
     /**
      * All sessions, including completed and uncompleted ones.
      */
-    sessions: PomodoroSession[];
+    sessions: Session[];
 
     /**
      * Adds a new pomodoro session with a generated id and a start timestamp.
@@ -19,7 +19,7 @@ export interface UsePomodorosResult {
     addSession: (
         type: SessionType,
         taskId: string | null,
-    ) => PomodoroSession;
+    ) => Session;
 
     /**
      * Marks a session as completed and sets its completion timestamp.
@@ -45,13 +45,13 @@ export function usePomodoros(): UsePomodorosResult {
     }
     const repo = repoRef.current;
 
-    const [sessions, setSessions] = useState<PomodoroSession[]>(() =>
+    const [sessions, setSessions] = useState<Session[]>(() =>
         repo.findAll(),
     );
 
     const addSession = useCallback(
-        (type: SessionType, taskId: string | null): PomodoroSession => {
-            const session: PomodoroSession = {
+        (type: SessionType, taskId: string | null): Session => {
+            const session: Session = {
                 id: generateId(),
                 type,
                 taskId,
@@ -71,7 +71,7 @@ export function usePomodoros(): UsePomodorosResult {
             setSessions((prev) => {
                 return prev.map((s) => {
                     if (s.id !== id) return s;
-                    const updated: PomodoroSession = {
+                    const updated: Session = {
                         ...s,
                         completed: true,
                         endTime: new Date().toISOString(),

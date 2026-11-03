@@ -3,17 +3,17 @@ import { usePomodoros } from '../hooks/usePomodoros';
 import { useTasks } from '../hooks/useTasks';
 import { SessionItem, DailySummary } from '../components/History';
 import { isSameDay } from '../utils/time';
-import type { PomodoroSession } from '../types';
+import type { Session } from '../types';
 import styles from './HistoryPage.module.css';
 
 type FilterMode = 'all' | 'work' | string;
 
 interface DayGroup {
   dateIso: string;
-  sessions: PomodoroSession[];
+  sessions: Session[];
 }
 
-function groupByDay(sessions: PomodoroSession[]): DayGroup[] {
+function groupByDay(sessions: Session[]): DayGroup[] {
   // Sort descending by startTime so newest day appears first.
   const sorted = [...sessions].sort(
     (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),

@@ -131,6 +131,19 @@
   }
 }
 
+/* Timer view: fit exactly in the viewport, never scroll */
+.shell[data-timer-view="true"] {
+  height: 100svh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.shell[data-timer-view="true"] .main {
+  min-height: 0;
+  padding-top: clamp(var(--space-sm), 3svh, var(--space-xl));
+  padding-bottom: clamp(var(--space-sm), 3svh, var(--space-xl));
+}
+
 @media (max-width: 550px) and (max-height: 300px) {
   .shell[data-timer-view="true"] .navbar {
     display: none;

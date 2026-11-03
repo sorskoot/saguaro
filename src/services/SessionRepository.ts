@@ -1,19 +1,19 @@
 import type { IRepository } from './interfaces/IRepository';
 import type { IStorageService } from './interfaces/IStorageService';
-import type { PomodoroSession } from '../types';
+import type { Session } from '../types';
 
 const SESSIONS_KEY = 'pomodoro_sessions';
 
-interface StoredPomodoroSession extends Omit<PomodoroSession, 'taskId'> {
+interface StoredSession extends Omit<Session, 'taskId'> {
   taskId?: string | null;
   projectId?: string | null;
 }
 
-export class PomodoroRepository implements IRepository<PomodoroSession> {
+export class PomodoroRepository implements IRepository<Session> {
   constructor(private readonly storage: IStorageService) {}
 
-  private load(): PomodoroSession[] {
-    const stored = this.storage.get<StoredPomodoroSession[]>(SESSIONS_KEY) ?? [];
+  private load(): Session[] {
+    const stored = this.storage.get<StoredSession[]>(SESSIONS_KEY) ?? [];
     const needsMigration = stored.some(
       (session) => session.projectId !== undefined || session.taskId === undefined,
     );
@@ -26,19 +26,19 @@ export class PomodoroRepository implements IRepository<PomodoroSession> {
     return sessions;
   }
 
-  private persist(sessions: PomodoroSession[]): void {
+  private persist(sessions: Session[]): void {
     this.storage.set(SESSIONS_KEY, sessions);
   }
 
-  findAll(): PomodoroSession[] {
+  findAll(): Session[] {
     return this.load();
   }
 
-  findById(id: string): PomodoroSession | undefined {
+  findById(id: string): Session | undefined {
     return this.load().find((s) => s.id === id);
   }
 
-  save(session: PomodoroSession): void {
+  save(session: Session): void {
     const sessions = this.load();
     const index = sessions.findIndex((s) => s.id === session.id);
     if (index >= 0) {

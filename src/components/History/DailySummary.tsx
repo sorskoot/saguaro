@@ -1,10 +1,10 @@
-import type { PomodoroSession } from '../../types';
+import type { Session } from '../../types';
 import { formatDate } from '../../utils/time';
 import styles from './DailySummary.module.css';
 
 interface DailySummaryProps {
   date: string;
-  sessions: PomodoroSession[];
+  sessions: Session[];
 }
 
 // Default work duration used when per-session duration is unavailable.

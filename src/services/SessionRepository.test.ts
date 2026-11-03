@@ -1,5 +1,5 @@
 import { PomodoroRepository } from './PomodoroRepository';
-import type { PomodoroSession } from '../types';
+import type { Session } from '../types';
 import type { IStorageService } from './interfaces/IStorageService';
 
 function createMockStorage() {
@@ -21,7 +21,7 @@ function createMockStorage() {
   } satisfies IStorageService;
 }
 
-function makeSession(id: string, overrides: Partial<PomodoroSession> = {}): PomodoroSession {
+function makeSession(id: string, overrides: Partial<Session> = {}): Session {
   return {
     id,
     taskId: null,

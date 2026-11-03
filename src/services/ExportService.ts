@@ -1,18 +1,18 @@
 import type { IExportService } from './interfaces/IExportService';
 import type { IStorageService } from './interfaces/IStorageService';
-import type { AppData, PomodoroSession, Task, Settings } from '../types';
+import type { AppData, Session, Task, Settings } from '../types';
 import { DEFAULT_SETTINGS } from '../types';
 
 const APP_VERSION = '1.0';
 const TASKS_KEY = 'pomodoro_tasks';
 const LEGACY_PROJECTS_KEY = 'pomodoro_projects';
 
-interface StoredPomodoroSession extends Omit<PomodoroSession, 'taskId'> {
+interface StoredSession extends Omit<Session, 'taskId'> {
   taskId?: string | null;
   projectId?: string | null;
 }
 
-function normalizeSessions(sessions: StoredPomodoroSession[]): PomodoroSession[] {
+function normalizeSessions(sessions: StoredSession[]): Session[] {
   return sessions.map(({ projectId, ...session }) => ({
     ...session,
     taskId: session.taskId ?? projectId ?? null,
@@ -31,7 +31,7 @@ export class ExportService implements IExportService {
         this.storage.get<Task[]>(LEGACY_PROJECTS_KEY) ??
         [],
       sessions: normalizeSessions(
-        this.storage.get<StoredPomodoroSession[]>('pomodoro_sessions') ?? [],
+        this.storage.get<StoredSession[]>('pomodoro_sessions') ?? [],
       ),
       exportedAt: new Date().toISOString(),
     };
@@ -50,7 +50,7 @@ export class ExportService implements IExportService {
       version: obj.version as string,
       settings: obj.settings as Settings,
       tasks: tasks as Task[],
-      sessions: normalizeSessions(obj.sessions as StoredPomodoroSession[]),
+      sessions: normalizeSessions(obj.sessions as StoredSession[]),
       exportedAt: (obj.exportedAt as string) ?? new Date().toISOString(),
     };
     this.storage.set('pomodoro_settings', appData.settings);

@@ -29,7 +29,7 @@ export interface Task {
 
 export type SessionType = 'work' | 'short-break' | 'long-break';
 
-export interface PomodoroSession {
+export interface Session {
   id: string;
   taskId: string | null;
   type: SessionType;
@@ -42,6 +42,6 @@ export interface AppData {
   version: string;
   settings: Settings;
   tasks: Task[];
-  sessions: PomodoroSession[];
+  sessions: Session[];
   exportedAt: string;
 }

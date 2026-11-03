@@ -1,5 +1,5 @@
 import { ExportService } from './ExportService';
-import { DEFAULT_SETTINGS, type AppData, type PomodoroSession, type Task, type Settings } from '../types';
+import { DEFAULT_SETTINGS, type AppData, type Session, type Task, type Settings } from '../types';
 import type { IStorageService } from './interfaces/IStorageService';
 
 function createMockStorage() {
@@ -30,7 +30,7 @@ const sampleTask: Task = {
   archived: false,
 };
 
-const sampleSession: PomodoroSession = {
+const sampleSession: Session = {
   id: 'sess-1',
   taskId: 'task-1',
   type: 'work',

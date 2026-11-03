@@ -3,19 +3,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-xl);
+  /* Spacing scales with the viewport height instead of being fixed */
+  gap: clamp(var(--space-sm), 3svh, var(--space-xl));
   flex: 1;
   width: 100%;
   min-width: 0;
-  justify-content: center;
-}
-
-/* ─── Responsive ─────────────────────────────────────────── */
-@media (max-width: 600px), (max-height: 700px) {
-  .page {
-    gap: var(--space-lg);
-    justify-content: flex-start;
-  }
+  min-height: 0;
+  justify-content: space-evenly;
 }
 
 @media (max-width: 550px) and (max-height: 300px) {

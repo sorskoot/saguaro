@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { useTimer } from '../hooks/useTimer';
 import type { UseTimerOptions } from '../hooks/useTimer';
-import type { PomodoroSession, SessionType, Task } from '../types';
+import type { Session, SessionType, Task } from '../types';
 import TimerPage from './TimerPage';
 
 vi.mock('../hooks/useTimer');
@@ -13,7 +13,7 @@ const tasks: Task[] = [
 
 let onComplete: UseTimerOptions['onComplete'];
 
-function session(id: string, taskId: string | null, type: SessionType = 'work', completed = true): PomodoroSession {
+function session(id: string, taskId: string | null, type: SessionType = 'work', completed = true): Session {
   return { id, taskId, type, completed, startTime: '', endTime: completed ? '' : null };
 }
 
