@@ -22,7 +22,7 @@ graph TD
     Services --> ExportService[ExportService]
     Services --> StorageService[StorageService]
     Services --> Repositories[Repositories]
-    Repositories --> PomodoroRepository[PomodoroRepository]
+    Repositories --> SessionRepository[SessionRepository]
     Repositories --> TaskRepository[TaskRepository]
     Repositories --> SettingsRepository[SettingsRepository]
     Frontend --> State[State Management]
@@ -46,7 +46,7 @@ graph TD
 - **UI Components:** presentational components grouped under `src/components/` (Timer, Tasks, Settings, History). They render state and emit user intents (events).
 - **Custom Hooks:** encapsulate behavioral logic and are used by components to access timer mechanics, settings, tasks, and export features. Notable hooks: `useTimer`, `useTasks`, `useSettings`, `useExport` (see `src/hooks/`).
 - **Services:** thin application services providing higher-level operations like `TimerService`, `ExportService`, and `StorageService` (see `src/services/`). They coordinate repositories and lower-level APIs.
-- **Repositories:** small adapters that read/write domain objects from the chosen storage (localStorage / IndexedDB). Examples: `PomodoroRepository`, `TaskRepository`, `SettingsRepository` under `src/services/`.
+- **Repositories:** small adapters that read/write domain objects from the chosen storage (localStorage / IndexedDB). Examples: `SessionRepository`, `TaskRepository`, `SettingsRepository` under `src/services/`.
 - **State Management:** a lightweight local store (Zustand or React state hooks) holds current session state, UI settings, and short-lived values. Persistent state is synced to repositories.
 - **Routing / Pages:** top-level pages under `src/pages/` map UI routes to page components (TimerPage, TasksPage, SettingsPage, HistoryPage).
 - **PWA / Service Worker:** `public/sw.js` and `public/manifest.webmanifest` enable offline behavior, caching of assets and (optionally) background sync for exports.
@@ -55,7 +55,7 @@ graph TD
 - User interacts with UI components → events call hook methods (e.g., `start()`, `pause()`, `completeSession()`).
 - Hooks delegate to `TimerService` for time calculations and session lifecycle.
 - Services persist session summaries and app settings via repositories which use `StorageService` (wrapping localStorage / IndexedDB).
-- Export flows use `ExportService` which reads historical records from `PomodoroRepository`, formats CSV/JSON, and triggers downloads.
+- Export flows use `ExportService` which reads historical records from `SessionRepository`, formats CSV/JSON, and triggers downloads.
 - State updates are kept minimal and authoritative source-of-truth for persisted data is the repositories.
 
 **Reasoning & Trade-offs**

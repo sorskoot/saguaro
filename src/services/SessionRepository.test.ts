@@ -1,4 +1,4 @@
-import { PomodoroRepository } from './PomodoroRepository';
+import { SessionRepository } from './SessionRepository';
 import type { Session } from '../types';
 import type { IStorageService } from './interfaces/IStorageService';
 
@@ -33,13 +33,13 @@ function makeSession(id: string, overrides: Partial<Session> = {}): Session {
   };
 }
 
-describe('PomodoroRepository', () => {
+describe('SessionRepository', () => {
   let storage: IStorageService;
-  let repo: PomodoroRepository;
+  let repo: SessionRepository;
 
   beforeEach(() => {
     storage = createMockStorage();
-    repo = new PomodoroRepository(storage);
+    repo = new SessionRepository(storage);
   });
 
   it('findAll() returns an empty array when nothing is stored', () => {
@@ -118,16 +118,5 @@ describe('PomodoroRepository', () => {
     repo.save(session);
 
     expect(repo.findById('s1')).toEqual(session);
-  });
-
-  it('migrates existing project associations to task associations', () => {
-    storage.set('pomodoro_sessions', [{
-      ...makeSession('s1'),
-      projectId: 'task-42',
-    }]);
-
-    expect(repo.findById('s1')).toMatchObject({ taskId: 'task-42' });
-    expect(storage.get<Array<Record<string, unknown>>>('pomodoro_sessions')?.[0])
-      .not.toHaveProperty('projectId');
   });
 });

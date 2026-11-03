@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { usePomodoros } from '../hooks/usePomodoros';
+import { useSessions } from '../hooks/useSessions';
 import { useTasks } from '../hooks/useTasks';
 import { SessionItem, DailySummary } from '../components/History';
 import { isSameDay } from '../utils/time';
@@ -32,7 +32,7 @@ function groupByDay(sessions: Session[]): DayGroup[] {
 }
 
 export default function HistoryPage() {
-  const { sessions } = usePomodoros();
+  const { sessions } = useSessions();
   const { tasks } = useTasks();
   const [filter, setFilter] = useState<FilterMode>('all');
 

@@ -26,9 +26,9 @@ function expectDots(total: number, filled: number, scope = 'task') {
 
 beforeEach(() => {
   localStorage.clear();
-  localStorage.setItem('pomodoro_tasks', JSON.stringify(tasks));
-  localStorage.setItem('pomodoro:selectedTaskId', JSON.stringify('first'));
-  localStorage.setItem('pomodoro_sessions', JSON.stringify([
+  localStorage.setItem('saguaro_tasks', JSON.stringify(tasks));
+  localStorage.setItem('saguaro:selectedTaskId', JSON.stringify('first'));
+  localStorage.setItem('saguaro_sessions', JSON.stringify([
     session('one', 'first'),
     session('break', 'first', 'short-break'),
     session('long-break', 'first', 'long-break'),
@@ -60,7 +60,7 @@ describe('TimerPage Spike circles', () => {
   });
 
   it('keeps all circles filled when completed sessions exceed the estimate', () => {
-    localStorage.setItem('pomodoro_sessions', JSON.stringify(
+    localStorage.setItem('saguaro_sessions', JSON.stringify(
       Array.from({ length: 5 }, (_, i) => session(String(i), 'first')),
     ));
     render(<TimerPage />);
@@ -68,7 +68,7 @@ describe('TimerPage Spike circles', () => {
   });
 
   it('shows empty circles when the task has no completed sessions', () => {
-    localStorage.removeItem('pomodoro_sessions');
+    localStorage.removeItem('saguaro_sessions');
     render(<TimerPage />);
     expectDots(3, 0);
   });
@@ -89,7 +89,7 @@ describe('TimerPage Spike circles', () => {
   });
 
   it('falls back to the cycle indicator for a deleted selected task', () => {
-    localStorage.setItem('pomodoro:selectedTaskId', JSON.stringify('deleted'));
+    localStorage.setItem('saguaro:selectedTaskId', JSON.stringify('deleted'));
     render(<TimerPage />);
     expectDots(4, 1, 'cycle');
   });

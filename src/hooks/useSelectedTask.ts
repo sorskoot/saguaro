@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { getStorageService } from '../services/StorageService';
 
-const STORAGE_KEY = 'pomodoro:selectedTaskId';
+const STORAGE_KEY = 'saguaro:selectedTaskId';
 
 export interface UseSelectedTaskResult {
     selectedTaskId: string | null;

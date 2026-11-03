@@ -44,7 +44,7 @@ describe('useTasks', () => {
 
     expect(result.current.tasks).toHaveLength(0);
     const stored: Array<{ id: string; archived: boolean }> = JSON.parse(
-      localStorage.getItem('pomodoro_tasks')!,
+      localStorage.getItem('saguaro_tasks')!,
     );
     expect(stored).toHaveLength(1);
     expect(stored[0].archived).toBe(true);
@@ -83,7 +83,7 @@ describe('useTasks', () => {
     });
 
     expect(result.current.tasks).toHaveLength(0);
-    const stored: unknown[] = JSON.parse(localStorage.getItem('pomodoro_tasks')!);
+    const stored: unknown[] = JSON.parse(localStorage.getItem('saguaro_tasks')!);
     expect(stored).toHaveLength(0);
   });
 

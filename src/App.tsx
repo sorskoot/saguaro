@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import TimerPage from './pages/TimerPage';
 import TasksPage from './pages/TasksPage';
@@ -12,7 +12,6 @@ export default function App() {
         <Routes>
           <Route path="/" element={<TimerPage />} />
           <Route path="/tasks" element={<TasksPage />} />
-          <Route path="/projects" element={<Navigate to="/tasks" replace />} />
           <Route path="/history" element={<HistoryPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>

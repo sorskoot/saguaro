@@ -1,7 +1,7 @@
 import type { IStorageService } from './interfaces/IStorageService';
 import { DEFAULT_SETTINGS, type Settings } from '../types';
 
-const SETTINGS_KEY = 'pomodoro_settings';
+const SETTINGS_KEY = 'saguaro_settings';
 
 export class SettingsRepository {
   constructor(private readonly storage: IStorageService) {}

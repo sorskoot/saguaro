@@ -65,7 +65,7 @@ npm run preview
 
 ```
 src/
-  hooks/        React hooks (useTimer, useSettings, usePomodoros, ...)
+  hooks/        React hooks (useTimer, useSettings, useSessions, ...)
   services/     Domain services and repositories (TimerService, StorageService, ...)
   components/   Shared UI components
   pages/        Route-level page components

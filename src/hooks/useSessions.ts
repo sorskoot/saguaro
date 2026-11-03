@@ -1,10 +1,10 @@
 import { useState, useRef, useCallback } from 'react';
-import { PomodoroRepository } from '../services/PomodoroRepository';
+import { SessionRepository } from '../services/SessionRepository';
 import { getStorageService } from '../services/StorageService';
 import { generateId } from '../utils/id';
 import type { Session, SessionType } from '../types';
 
-export interface UsePomodorosResult {
+export interface UseSessionsResult {
     /**
      * All sessions, including completed and uncompleted ones.
      */
@@ -35,13 +35,13 @@ export interface UsePomodorosResult {
 }
 
 /**
- * Manages pomodoro sessions stored via {@link PomodoroRepository}.
+ * Manages pomodoro sessions stored via {@link SessionRepository}.
  * Provides CRUD operations and keeps local state in sync with persistence.
  */
-export function usePomodoros(): UsePomodorosResult {
-    const repoRef = useRef<PomodoroRepository | null>(null);
+export function useSessions(): UseSessionsResult {
+    const repoRef = useRef<SessionRepository | null>(null);
     if (repoRef.current === null) {
-        repoRef.current = new PomodoroRepository(getStorageService());
+        repoRef.current = new SessionRepository(getStorageService());
     }
     const repo = repoRef.current;
 

@@ -3,7 +3,7 @@ import { useSelectedTask } from '../hooks/useSelectedTask';
 import { useSettings } from '../hooks/useSettings';
 import { useTimer } from '../hooks/useTimer';
 import { useTasks } from '../hooks/useTasks';
-import { usePomodoros } from '../hooks/usePomodoros';
+import { useSessions } from '../hooks/useSessions';
 import ModeSelector from '../components/ModeSelector';
 import Timer from '../components/Timer';
 import TimerPictureInPicture from '../components/Timer/TimerPictureInPicture';
@@ -21,7 +21,7 @@ function getTotalSeconds(mode: SessionType, settings: Settings): number {
 export default function TimerPage() {
   const { settings } = useSettings();
   const { tasks } = useTasks();
-  const { sessions, addSession, completeSession } = usePomodoros();
+  const { sessions, addSession, completeSession } = useSessions();
   const { selectedTaskId, setSelectedTaskId } = useSelectedTask();
 
   const handleComplete = useCallback(

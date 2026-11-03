@@ -2,8 +2,7 @@ import type { IRepository } from './interfaces/IRepository';
 import type { IStorageService } from './interfaces/IStorageService';
 import type { Task } from '../types';
 
-const TASKS_KEY = 'pomodoro_tasks';
-const LEGACY_PROJECTS_KEY = 'pomodoro_projects';
+const TASKS_KEY = 'saguaro_tasks';
 
 export class TaskRepository implements IRepository<Task> {
   constructor(private readonly storage: IStorageService) {}
@@ -29,13 +28,6 @@ export class TaskRepository implements IRepository<Task> {
       ) {
         this.persist(normalizedTasks);
       }
-      return normalizedTasks;
-    }
-
-    const legacyTasks = this.storage.get<Task[]>(LEGACY_PROJECTS_KEY);
-    if (legacyTasks !== null) {
-      const normalizedTasks = this.normalize(legacyTasks);
-      this.persist(normalizedTasks);
       return normalizedTasks;
     }
 

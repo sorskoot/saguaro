@@ -21,7 +21,7 @@ function createMockStorage() {
   } satisfies IStorageService;
 }
 
-const SETTINGS_KEY = 'pomodoro_settings';
+const SETTINGS_KEY = 'saguaro_settings';
 
 describe('SettingsRepository', () => {
   it('load() returns DEFAULT_SETTINGS when nothing is stored', () => {

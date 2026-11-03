@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTasks } from '../hooks/useTasks';
-import { usePomodoros } from '../hooks/usePomodoros';
+import { useSessions } from '../hooks/useSessions';
 import { useSelectedTask } from '../hooks/useSelectedTask';
 import { TaskForm, TaskItem } from '../components/Tasks';
 import type { Task } from '../types';
@@ -14,7 +14,7 @@ type FormState =
 export default function TasksPage() {
   const [showArchived, setShowArchived] = useState(false);
   const { tasks, addTask, updateTask, archiveTask, deleteTask } = useTasks(showArchived);
-  const { sessions } = usePomodoros();
+  const { sessions } = useSessions();
   const { selectedTaskId, setSelectedTaskId } = useSelectedTask();
   const [formState, setFormState] = useState<FormState>({ mode: 'hidden' });
 

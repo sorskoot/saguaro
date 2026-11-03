@@ -65,38 +65,19 @@ describe('ExportService', () => {
     });
 
     it('includes stored settings', () => {
-      storage.set('pomodoro_settings', sampleSettings);
+      storage.set('saguaro_settings', sampleSettings);
 
       expect(service.exportData().settings).toEqual(sampleSettings);
     });
 
-    it('includes tasks stored under pomodoro_tasks', () => {
-      storage.set('pomodoro_tasks', [sampleTask]);
-
-      expect(service.exportData().tasks).toEqual([sampleTask]);
-    });
-
-    it('migrates stored projects when exporting tasks', () => {
-      storage.set('pomodoro_projects', [sampleTask]);
+    it('includes tasks stored under saguaro_tasks', () => {
+      storage.set('saguaro_tasks', [sampleTask]);
 
       expect(service.exportData().tasks).toEqual([sampleTask]);
     });
 
     it('exports sessions with task associations', () => {
-      storage.set('pomodoro_sessions', [sampleSession]);
-
-      expect(service.exportData().sessions).toEqual([sampleSession]);
-    });
-
-    it('migrates old session associations when exporting', () => {
-      storage.set('pomodoro_sessions', [{
-        id: 'sess-1',
-        projectId: 'task-1',
-        type: 'work',
-        startTime: sampleSession.startTime,
-        endTime: sampleSession.endTime,
-        completed: true,
-      }]);
+      storage.set('saguaro_sessions', [sampleSession]);
 
       expect(service.exportData().sessions).toEqual([sampleSession]);
     });
@@ -120,36 +101,13 @@ describe('ExportService', () => {
     it('writes settings, tasks, and sessions to storage', () => {
       service.importData(validPayload);
 
-      expect(storage.get('pomodoro_settings')).toEqual(sampleSettings);
-      expect(storage.get('pomodoro_tasks')).toEqual([sampleTask]);
-      expect(storage.get('pomodoro_sessions')).toEqual([sampleSession]);
+      expect(storage.get('saguaro_settings')).toEqual(sampleSettings);
+      expect(storage.get('saguaro_tasks')).toEqual([sampleTask]);
+      expect(storage.get('saguaro_sessions')).toEqual([sampleSession]);
     });
 
     it('returns the imported AppData', () => {
       expect(service.importData(validPayload)).toEqual(validPayload);
-    });
-
-    it('imports legacy backups that contain projects and project associations', () => {
-      const legacySession = {
-        id: 'sess-1',
-        projectId: 'task-1',
-        type: 'work',
-        startTime: sampleSession.startTime,
-        endTime: sampleSession.endTime,
-        completed: true,
-      };
-      const result = service.importData({
-        version: '1.0',
-        settings: sampleSettings,
-        projects: [sampleTask],
-        sessions: [legacySession],
-        exportedAt: '2024-01-01T12:00:00.000Z',
-      });
-
-      expect(result.tasks).toEqual([sampleTask]);
-      expect(result.sessions).toEqual([sampleSession]);
-      expect(storage.get('pomodoro_tasks')).toEqual([sampleTask]);
-      expect(storage.get('pomodoro_sessions')).toEqual([sampleSession]);
     });
 
     it('throws when the input is not an object', () => {

@@ -28,14 +28,14 @@ describe('useSettings', () => {
     expect(result.current.settings.soundEnabled).toBe(DEFAULT_SETTINGS.soundEnabled);
 
     // Value was persisted to localStorage by the repository.
-    const stored = JSON.parse(localStorage.getItem('pomodoro_settings')!);
+    const stored = JSON.parse(localStorage.getItem('saguaro_settings')!);
     expect(stored.workDuration).toBe(30);
   });
 
   it('re-loading the hook reads persisted settings from storage', () => {
     // Pre-populate localStorage as if a previous session had saved settings.
     localStorage.setItem(
-      'pomodoro_settings',
+      'saguaro_settings',
       JSON.stringify({ ...DEFAULT_SETTINGS, workDuration: 45 }),
     );
 

@@ -9,7 +9,7 @@ const tasks: Task[] = [
 
 beforeEach(() => {
   localStorage.clear();
-  localStorage.setItem('pomodoro_tasks', JSON.stringify(tasks));
+  localStorage.setItem('saguaro_tasks', JSON.stringify(tasks));
 });
 
 afterEach(() => {
@@ -31,11 +31,11 @@ describe('TasksPage archived tasks', () => {
 
     fireEvent.click(toggle);
     expect(screen.queryByText('Archived task')).not.toBeInTheDocument();
-    expect(JSON.parse(localStorage.getItem('pomodoro_tasks')!)).toEqual(tasks);
+    expect(JSON.parse(localStorage.getItem('saguaro_tasks')!)).toEqual(tasks);
   });
 
   it('shows archived-only tasks instead of the empty state when enabled', () => {
-    localStorage.setItem('pomodoro_tasks', JSON.stringify([tasks[1]]));
+    localStorage.setItem('saguaro_tasks', JSON.stringify([tasks[1]]));
     render(<TasksPage />);
     expect(screen.getByText(/No tasks yet/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Show archived tasks' }));
@@ -44,14 +44,14 @@ describe('TasksPage archived tasks', () => {
   });
 
   it('does not allow selecting or re-archiving an archived task', () => {
-    localStorage.setItem('pomodoro:selectedTaskId', JSON.stringify('active'));
+    localStorage.setItem('saguaro:selectedTaskId', JSON.stringify('active'));
     render(<TasksPage />);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Show archived tasks' }));
     const row = screen.getByText('Archived task').closest('li')!;
     expect(within(row).queryByTitle('Archive task')).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Archived task'));
     fireEvent.keyDown(screen.getByText('Archived task').parentElement!, { key: 'Enter' });
-    expect(JSON.parse(localStorage.getItem('pomodoro:selectedTaskId')!)).toBe('active');
+    expect(JSON.parse(localStorage.getItem('saguaro:selectedTaskId')!)).toBe('active');
     fireEvent.click(screen.getByRole('button', { name: /Active task/ }));
     expect(screen.getByRole('button', { name: /Active task/ })).toHaveAttribute('aria-pressed', 'true');
   });
@@ -74,6 +74,6 @@ describe('TasksPage archived tasks', () => {
     const row = screen.getByText('Archived task').closest('li')!;
     fireEvent.click(within(row).getByTitle('Delete task'));
     expect(screen.queryByText('Archived task')).not.toBeInTheDocument();
-    expect(JSON.parse(localStorage.getItem('pomodoro_tasks')!)).toEqual([tasks[0]]);
+    expect(JSON.parse(localStorage.getItem('saguaro_tasks')!)).toEqual([tasks[0]]);
   });
 });

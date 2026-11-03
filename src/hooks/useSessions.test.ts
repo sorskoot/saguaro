@@ -1,18 +1,18 @@
 import { renderHook, act } from '@testing-library/react';
-import { usePomodoros } from './usePomodoros';
+import { useSessions } from './useSessions';
 
 beforeEach(() => {
   localStorage.clear();
 });
 
-describe('usePomodoros', () => {
+describe('useSessions', () => {
   it('sessions is empty initially', () => {
-    const { result } = renderHook(() => usePomodoros());
+    const { result } = renderHook(() => useSessions());
     expect(result.current.sessions).toEqual([]);
   });
 
   it('addSession adds a session with correct fields', () => {
-    const { result } = renderHook(() => usePomodoros());
+    const { result } = renderHook(() => useSessions());
 
     act(() => {
       result.current.addSession('work', null);
@@ -30,7 +30,7 @@ describe('usePomodoros', () => {
   });
 
   it('completeSession marks the session as completed and sets endTime', () => {
-    const { result } = renderHook(() => usePomodoros());
+    const { result } = renderHook(() => useSessions());
 
     act(() => {
       result.current.addSession('work', null);
@@ -48,7 +48,7 @@ describe('usePomodoros', () => {
   });
 
   it('deleteSession removes the session', () => {
-    const { result } = renderHook(() => usePomodoros());
+    const { result } = renderHook(() => useSessions());
 
     act(() => {
       result.current.addSession('work', null);
@@ -61,7 +61,7 @@ describe('usePomodoros', () => {
 
     expect(result.current.sessions).toHaveLength(0);
 
-    const stored: unknown[] = JSON.parse(localStorage.getItem('pomodoro_sessions')!);
+    const stored: unknown[] = JSON.parse(localStorage.getItem('saguaro_sessions')!);
     expect(stored).toHaveLength(0);
   });
 });

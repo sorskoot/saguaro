@@ -93,7 +93,7 @@ describe('useExport', () => {
       expect(onError).not.toHaveBeenCalled();
 
       // ExportService.importData writes individual keys to localStorage.
-      const stored = JSON.parse(localStorage.getItem('pomodoro_settings')!);
+      const stored = JSON.parse(localStorage.getItem('saguaro_settings')!);
       expect(stored.workDuration).toBe(30);
     });
 
