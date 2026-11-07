@@ -4,7 +4,7 @@ TODO:
         ✓ Add functionality to select a task in the Tasks tab and that task becomes the active task. This task is selected in the Timer view too. When adding a new task, that task is selected. @done(26-10-27 21:42)
         ✓ Assign a number of Pomodoros to each task. @done(26-10-27 21:43)
         ✓ Visualize the number of Pomodoros assigned to a task on the timer view as the little circles. @done(26-10-27 22:24)
-        ☐ Add more circles if more pomodoros are needed when working on a task. Give these a different color.
+        ✓ Add more circles if more pomodoros are needed when working on a task. Give these a different color. @done(26-11-07 11:11)
         ☐ Add a button to note when an interuption occurs.
         ☐ A Pomodoro should be pausable. When it's started and you hit 'pause', it should ask if you are sure and then end the pomodoro. When the pomodoro ends, it is counted.
         ✓ Improve responsiveness @done(26-10-27 22:42)

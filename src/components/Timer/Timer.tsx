@@ -37,10 +37,12 @@ export default function Timer({
   onSkip,
 }: TimerProps) {
   const progress = totalSeconds > 0 ? secondsLeft / totalSeconds : 0;
-  const dotsCount = estimatedPomodoros ?? DOTS_COUNT;
-  const filledDots = estimatedPomodoros === undefined
-    ? pomodoroCount % DOTS_COUNT
-    : Math.min(pomodoroCount, dotsCount);
+  const plannedDots = estimatedPomodoros ?? DOTS_COUNT;
+  const isTaskScoped = estimatedPomodoros !== undefined;
+  // Sessions beyond the estimate get extra dots in a different colour.
+  const extraDots = isTaskScoped ? Math.max(0, pomodoroCount - plannedDots) : 0;
+  const dotsCount = plannedDots + extraDots;
+  const filledDots = isTaskScoped ? Math.min(pomodoroCount, dotsCount) : pomodoroCount % DOTS_COUNT;
 
   return (
     <div className={styles.container} data-timer>
@@ -70,13 +72,15 @@ export default function Timer({
       <div
         className={styles.dots}
         role="img"
-        aria-label={`${filledDots} of ${dotsCount} ${estimatedPomodoros === undefined ? 'cycle' : 'task'} Spikes completed`}
+        aria-label={`${filledDots} of ${plannedDots} ${isTaskScoped ? 'task' : 'cycle'} Spikes completed${extraDots > 0 ? `, ${extraDots} over estimate` : ''}`}
       >
         {Array.from({ length: dotsCount }).map((_, i) => (
           <span
             key={i}
             aria-hidden="true"
-            className={`${styles.dot} ${i < filledDots ? styles.dotFilled : styles.dotEmpty}`}
+            className={`${styles.dot} ${
+              i >= plannedDots ? styles.dotExtra : i < filledDots ? styles.dotFilled : styles.dotEmpty
+            }`}
           >
             {i < filledDots ? '●' : '○'}
           </span>

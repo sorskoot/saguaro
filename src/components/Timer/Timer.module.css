@@ -168,6 +168,11 @@
   color: var(--color-text-muted);
 }
 
+/* Sessions completed beyond the task's estimate */
+.dotExtra {
+  color: var(--color-desert-purple-bright);
+}
+
 /* Drop optional elements as height runs out */
 @media (max-height: 600px) {
   .dots {

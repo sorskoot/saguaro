@@ -59,12 +59,19 @@ describe('TimerPage Spike circles', () => {
     expectDots(4, 1, 'cycle');
   });
 
-  it('keeps all circles filled when completed sessions exceed the estimate', () => {
+  it('adds extra circles when completed sessions exceed the estimate', () => {
     localStorage.setItem('saguaro_sessions', JSON.stringify(
       Array.from({ length: 5 }, (_, i) => session(String(i), 'first')),
     ));
     render(<TimerPage />);
-    expectDots(3, 3);
+    const dots = screen.getByRole('img', { name: '5 of 3 task Spikes completed, 2 over estimate' });
+    expect(dots.children).toHaveLength(5);
+    expect(within(dots).queryAllByText('●')).toHaveLength(5);
+    expect(within(dots).queryAllByText('○')).toHaveLength(0);
+    // Only the circles beyond the estimate use the extra style.
+    expect(Array.from(dots.children).map((c) => /dotExtra/.test(c.className))).toEqual([
+      false, false, false, true, true,
+    ]);
   });
 
   it('shows empty circles when the task has no completed sessions', () => {
