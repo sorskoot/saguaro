@@ -16,6 +16,48 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe('TasksPage description and link', () => {
+  it('shows a task description and a safe external link', () => {
+    localStorage.setItem(
+      'saguaro_tasks',
+      JSON.stringify([
+        { ...tasks[0], description: 'Fix the crash', link: 'https://github.com/o/r/issues/7' },
+      ]),
+    );
+    render(<TasksPage />);
+
+    expect(screen.getByText('Fix the crash')).toBeInTheDocument();
+    const link = screen.getByRole('link', { name: 'github.com/o/r/issues/7' });
+    expect(link).toHaveAttribute('href', 'https://github.com/o/r/issues/7');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('does not render a link for non-http(s) values', () => {
+    localStorage.setItem(
+      'saguaro_tasks',
+      JSON.stringify([{ ...tasks[0], link: 'javascript:alert(1)' }]),
+    );
+    render(<TasksPage />);
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
+
+  it('saves a description and link added while editing', () => {
+    render(<TasksPage />);
+    fireEvent.click(screen.getByTitle('Edit task'));
+    fireEvent.change(screen.getByLabelText('Description (optional)'), {
+      target: { value: 'New notes' },
+    });
+    fireEvent.change(screen.getByLabelText('Link (optional)'), {
+      target: { value: 'https://example.com/1' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    const saved = JSON.parse(localStorage.getItem('saguaro_tasks')!);
+    expect(saved[0]).toMatchObject({ description: 'New notes', link: 'https://example.com/1' });
+  });
+});
+
 describe('TasksPage archived tasks', () => {
   it('hides archived tasks by default and toggles them without changing storage', () => {
     render(<TasksPage />);

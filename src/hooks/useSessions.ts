@@ -14,11 +14,13 @@ export interface UseSessionsResult {
      * Adds a new pomodoro session with a generated id and a start timestamp.
      * @param type The session type to create.
      * @param taskId Optional task association; can be null.
+     * @param interruptions Number of interruptions noted during the session.
      * @returns The created session.
      */
     addSession: (
         type: SessionType,
         taskId: string | null,
+        interruptions?: number,
     ) => Session;
 
     /**
@@ -26,6 +28,12 @@ export interface UseSessionsResult {
      * @param id Session id to complete.
      */
     completeSession: (id: string) => void;
+
+    /**
+     * Marks a session as cancelled: sets its end timestamp but not `completed`.
+     * @param id Session id to cancel.
+     */
+    cancelSession: (id: string) => void;
 
     /**
      * Permanently removes a session.
@@ -50,7 +58,11 @@ export function useSessions(): UseSessionsResult {
     );
 
     const addSession = useCallback(
-        (type: SessionType, taskId: string | null): Session => {
+        (
+            type: SessionType,
+            taskId: string | null,
+            interruptions = 0,
+        ): Session => {
             const session: Session = {
                 id: generateId(),
                 type,
@@ -58,6 +70,7 @@ export function useSessions(): UseSessionsResult {
                 startTime: new Date().toISOString(),
                 endTime: null,
                 completed: false,
+                interruptions,
             };
             repo.save(session);
             setSessions((prev) => [...prev, session]);
@@ -84,6 +97,25 @@ export function useSessions(): UseSessionsResult {
         [repo],
     );
 
+    const cancelSession = useCallback(
+        (id: string) => {
+            setSessions((prev) => {
+                return prev.map((s) => {
+                    if (s.id !== id) return s;
+                    const updated: Session = {
+                        ...s,
+                        completed: false,
+                        cancelled: true,
+                        endTime: new Date().toISOString(),
+                    };
+                    repo.save(updated);
+                    return updated;
+                });
+            });
+        },
+        [repo],
+    );
+
     const deleteSession = useCallback(
         (id: string) => {
             repo.delete(id);
@@ -92,5 +124,5 @@ export function useSessions(): UseSessionsResult {
         [repo],
     );
 
-    return { sessions, addSession, completeSession, deleteSession };
+    return { sessions, addSession, completeSession, cancelSession, deleteSession };
 }

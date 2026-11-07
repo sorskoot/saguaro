@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useSessions } from '../hooks/useSessions';
 import { useTasks } from '../hooks/useTasks';
-import { SessionItem, DailySummary } from '../components/History';
+import { SessionItem, DailySummary, TaskSummary } from '../components/History';
 import { isSameDay } from '../utils/time';
 import type { Session } from '../types';
 import styles from './HistoryPage.module.css';
@@ -50,6 +50,17 @@ export default function HistoryPage() {
     return sessions.filter((session) => session.taskId === filter);
   }, [sessions, filter]);
 
+  // Per-task totals: the selected task, or every task that has work sessions.
+  const summaryTasks = useMemo(() => {
+    if (filter !== 'all' && filter !== 'work') {
+      return tasks.filter((t) => t.id === filter);
+    }
+    const withWork = new Set(
+      sessions.filter((s) => s.type === 'work' && s.taskId).map((s) => s.taskId),
+    );
+    return tasks.filter((t) => withWork.has(t.id));
+  }, [tasks, sessions, filter]);
+
   const dayGroups = useMemo(() => groupByDay(filteredSessions), [filteredSessions]);
 
   return (
@@ -74,6 +85,14 @@ export default function HistoryPage() {
 
       {dayGroups.length === 0 && (
         <p className={styles.empty}>No sessions found. Complete a Spike to see history.</p>
+      )}
+
+      {summaryTasks.length > 0 && (
+        <section className={styles.taskSummaries} aria-label="Per-task totals">
+          {summaryTasks.map((task) => (
+            <TaskSummary key={task.id} task={task} sessions={sessions} />
+          ))}
+        </section>
       )}
 
       <div className={styles.groups}>

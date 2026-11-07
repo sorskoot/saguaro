@@ -1,5 +1,11 @@
 import type { Task } from '../../types';
+import { toSafeHttpUrl } from '../../utils/url';
 import styles from './TaskItem.module.css';
+
+/** Shows the link without its protocol, e.g. "github.com/owner/repo/issues/1". */
+function formatLinkLabel(href: string): string {
+  return href.replace(/^https?:\/\//, '').replace(/\/$/, '');
+}
 
 interface TaskItemProps {
   task: Task;
@@ -20,6 +26,8 @@ export default function TaskItem({
   onArchive,
   onDelete,
 }: TaskItemProps) {
+  const link = toSafeHttpUrl(task.link);
+
   return (
     <div
       className={`${styles.row} ${task.archived ? styles.archived : selected ? styles.selected : ''}`}
@@ -39,10 +47,29 @@ export default function TaskItem({
         style={{ backgroundColor: task.color }}
         aria-hidden="true"
       />
-      <span className={styles.name} title={task.name}>
-        {task.name}
-        {task.archived && <span className={styles.archivedLabel}> (Archived)</span>}
-      </span>
+      <div className={styles.info}>
+        <span className={styles.name} title={task.name}>
+          {task.name}
+          {task.archived && <span className={styles.archivedLabel}> (Archived)</span>}
+        </span>
+        {task.description && (
+          <span className={styles.description} title={task.description}>
+            {task.description}
+          </span>
+        )}
+        {link && (
+          <a
+            className={styles.link}
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            {formatLinkLabel(link)}
+          </a>
+        )}
+      </div>
       <span className={styles.estimate}>
         {task.estimatedPomodoros} {task.estimatedPomodoros === 1 ? 'Spike' : 'Spikes'}
       </span>

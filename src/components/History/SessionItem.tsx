@@ -34,12 +34,20 @@ export default function SessionItem({ session, taskName }: SessionItemProps) {
       <span className={taskName ? styles.taskName : `${styles.taskName} ${styles.noTask}`}>
         {taskName ?? 'No task'}
       </span>
+      {!!session.interruptions && (
+        <span
+          className={styles.interruptions}
+          title={`${session.interruptions} interruption${session.interruptions === 1 ? '' : 's'}`}
+        >
+          ⚡{session.interruptions}
+        </span>
+      )}
       <span
         className={`${styles.badge} ${
           session.completed ? styles.badgeCompleted : styles.badgeIncomplete
         }`}
       >
-        {session.completed ? 'Done' : 'Incomplete'}
+        {session.completed ? 'Done' : session.cancelled ? 'Cancelled' : 'Incomplete'}
       </span>
     </div>
   );

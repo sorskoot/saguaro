@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useSelectedTask } from '../hooks/useSelectedTask';
 import { useSettings } from '../hooks/useSettings';
 import { useTimer } from '../hooks/useTimer';
@@ -21,19 +21,63 @@ function getTotalSeconds(mode: SessionType, settings: Settings): number {
 export default function TimerPage() {
   const { settings } = useSettings();
   const { tasks } = useTasks();
-  const { sessions, addSession, completeSession } = useSessions();
+  const { sessions, addSession, completeSession, cancelSession } = useSessions();
   const { selectedTaskId, setSelectedTaskId } = useSelectedTask();
+
+  const [interruptions, setInterruptions] = useState(0);
+  const interruptionsRef = useRef(0);
+
+  const resetInterruptions = useCallback(() => {
+    interruptionsRef.current = 0;
+    setInterruptions(0);
+  }, []);
+
+  const handleInterrupt = useCallback(() => {
+    interruptionsRef.current += 1;
+    setInterruptions(interruptionsRef.current);
+  }, []);
 
   const handleComplete = useCallback(
     (completedMode: SessionType) => {
       // Record the completed session immediately upon completion.
-      const session = addSession(completedMode, selectedTaskId);
+      const count = completedMode === 'work' ? interruptionsRef.current : 0;
+      const session = addSession(completedMode, selectedTaskId, count);
       completeSession(session.id);
+      resetInterruptions();
     },
-    [addSession, completeSession, selectedTaskId],
+    [addSession, completeSession, selectedTaskId, resetInterruptions],
   );
 
-  const timer = useTimer({ settings, onComplete: handleComplete });
+  const handleCancelled = useCallback(
+    (cancelledMode: SessionType) => {
+      // Log the cancelled session (never counted as completed).
+      const count = cancelledMode === 'work' ? interruptionsRef.current : 0;
+      const session = addSession(cancelledMode, selectedTaskId, count);
+      cancelSession(session.id);
+      resetInterruptions();
+    },
+    [addSession, cancelSession, selectedTaskId, resetInterruptions],
+  );
+
+  const timer = useTimer({ settings, onComplete: handleComplete, onCancel: handleCancelled });
+
+  const handleReset = useCallback(() => {
+    timer.reset();
+    resetInterruptions();
+  }, [timer, resetInterruptions]);
+
+  const handleSkip = useCallback(() => {
+    timer.skip();
+    resetInterruptions();
+  }, [timer, resetInterruptions]);
+
+  const handleChangeMode = useCallback(
+    (mode: SessionType) => {
+      timer.changeMode(mode);
+      resetInterruptions();
+    },
+    [timer, resetInterruptions],
+  );
 
   const totalSeconds = getTotalSeconds(timer.mode, settings);
   const selectedTask = tasks.find((task) => task.id === selectedTaskId);
@@ -46,7 +90,7 @@ export default function TimerPage() {
 
   return (
     <div className={styles.page}>
-      <ModeSelector mode={timer.mode} onChange={timer.changeMode} />
+      <ModeSelector mode={timer.mode} onChange={handleChangeMode} />
       <Timer
         secondsLeft={timer.secondsLeft}
         totalSeconds={totalSeconds}
@@ -54,10 +98,13 @@ export default function TimerPage() {
         mode={timer.mode}
         pomodoroCount={completedPomodoros}
         estimatedPomodoros={selectedTask?.estimatedPomodoros}
+        interruptions={interruptions}
+        onInterrupt={handleInterrupt}
         onStart={timer.start}
         onPause={timer.pause}
-        onReset={timer.reset}
-        onSkip={timer.skip}
+        onCancel={timer.cancel}
+        onReset={handleReset}
+        onSkip={handleSkip}
       />
       <TimerPictureInPicture secondsLeft={timer.secondsLeft} />
       <TaskSelector

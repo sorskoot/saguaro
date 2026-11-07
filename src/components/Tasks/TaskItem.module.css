@@ -46,9 +46,39 @@
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
 }
 
+/* ─── Info (name, description, link) ─────────────────────── */
+.info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.link {
+  font-size: var(--font-size-sm);
+  color: var(--color-saguaro-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
 /* ─── Name ───────────────────────────────────────────────── */
 .name {
-  flex: 1;
   font-size: var(--font-size-md);
   font-weight: 500;
   color: var(--color-text-primary);
@@ -116,10 +146,18 @@
     gap: var(--space-sm);
   }
 
-  .name {
+  .info {
     grid-column: 2 / -1;
+  }
+
+  .name,
+  .description {
     white-space: normal;
     overflow-wrap: anywhere;
+  }
+
+  .link {
+    min-height: 24px;
   }
 
   .estimate {

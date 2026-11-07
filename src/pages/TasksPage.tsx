@@ -3,7 +3,7 @@ import { useTasks } from '../hooks/useTasks';
 import { useSessions } from '../hooks/useSessions';
 import { useSelectedTask } from '../hooks/useSelectedTask';
 import { TaskForm, TaskItem } from '../components/Tasks';
-import type { Task } from '../types';
+import type { Task, TaskDetails } from '../types';
 import styles from './TasksPage.module.css';
 
 type FormState =
@@ -22,14 +22,31 @@ export default function TasksPage() {
     return sessions.filter((session) => session.taskId === taskId && session.completed).length;
   }
 
-  function handleAdd(name: string, color: string, estimatedPomodoros: number) {
-    const task = addTask(name, color, estimatedPomodoros);
+  function handleAdd(
+    name: string,
+    color: string,
+    estimatedPomodoros: number,
+    details: TaskDetails,
+  ) {
+    const task = addTask(name, color, estimatedPomodoros, details);
     setSelectedTaskId(task.id);
     setFormState({ mode: 'hidden' });
   }
 
-  function handleEdit(task: Task, name: string, color: string, estimatedPomodoros: number) {
-    updateTask(task.id, { name, color, estimatedPomodoros });
+  function handleEdit(
+    task: Task,
+    name: string,
+    color: string,
+    estimatedPomodoros: number,
+    details: TaskDetails,
+  ) {
+    updateTask(task.id, {
+      name,
+      color,
+      estimatedPomodoros,
+      description: details.description,
+      link: details.link,
+    });
     setFormState({ mode: 'hidden' });
   }
 
@@ -97,8 +114,8 @@ export default function TasksPage() {
             {isEditing(task.id) ? (
               <TaskForm
                 initial={task}
-                onSubmit={(name, color, estimatedPomodoros) =>
-                  handleEdit(task, name, color, estimatedPomodoros)
+                onSubmit={(name, color, estimatedPomodoros, details) =>
+                  handleEdit(task, name, color, estimatedPomodoros, details)
                 }
                 onCancel={() => setFormState({ mode: 'hidden' })}
               />

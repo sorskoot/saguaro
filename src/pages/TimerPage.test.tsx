@@ -40,7 +40,7 @@ beforeEach(() => {
     onComplete = options.onComplete;
     return {
       secondsLeft: 1500, isRunning: false, mode: 'work', pomodoroCount: 5,
-      start: vi.fn(), pause: vi.fn(), reset: vi.fn(), skip: vi.fn(), changeMode: vi.fn(),
+      start: vi.fn(), pause: vi.fn(), cancel: vi.fn(), reset: vi.fn(), skip: vi.fn(), changeMode: vi.fn(),
     };
   });
 });

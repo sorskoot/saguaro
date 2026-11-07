@@ -63,6 +63,13 @@
   line-height: 1.7;
 }
 
+/* ─── Per-task totals ────────────────────────────────────── */
+.taskSummaries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
 /* ─── Day groups — scrollable area ──────────────────────── */
 .groups {
   display: flex;

@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { TaskRepository } from '../services/TaskRepository';
 import { getStorageService } from '../services/StorageService';
 import { generateId } from '../utils/id';
-import type { Task } from '../types';
+import type { Task, TaskDetails } from '../types';
 
 export interface UseTasksResult {
     /**
@@ -15,8 +15,14 @@ export interface UseTasksResult {
      * @param name Task display name.
      * @param color Task color value.
      * @param estimatedPomodoros Number of work sessions planned for the task.
+     * @param details Optional description and link.
      */
-    addTask: (name: string, color: string, estimatedPomodoros: number) => Task;
+    addTask: (
+        name: string,
+        color: string,
+        estimatedPomodoros: number,
+        details?: TaskDetails,
+    ) => Task;
 
     /**
      * Updates an existing task. If the id is not found, the partial is stored as a new task.
@@ -57,12 +63,14 @@ export function useTasks(includeArchived = false): UseTasksResult {
     const tasks = includeArchived ? allTasks : allTasks.filter((task) => !task.archived);
 
     const addTask = useCallback(
-        (name: string, color: string, estimatedPomodoros: number) => {
+        (name: string, color: string, estimatedPomodoros: number, details?: TaskDetails) => {
             const task: Task = {
                 id: generateId(),
                 name,
                 color,
                 estimatedPomodoros,
+                ...(details?.description ? { description: details.description } : {}),
+                ...(details?.link ? { link: details.link } : {}),
                 createdAt: new Date().toISOString(),
                 archived: false,
             };

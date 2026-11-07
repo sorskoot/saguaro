@@ -23,8 +23,18 @@ export interface Task {
   name: string;
   color: string;
   estimatedPomodoros: number;
+  /** Optional free-text notes about the task. */
+  description?: string;
+  /** Optional http(s) link, e.g. to an issue on GitHub. */
+  link?: string;
   createdAt: string;
   archived: boolean;
+}
+
+/** Optional extra details that can be attached to a task. */
+export interface TaskDetails {
+  description?: string;
+  link?: string;
 }
 
 export type SessionType = 'work' | 'short-break' | 'long-break';
@@ -36,6 +46,10 @@ export interface Session {
   startTime: string;
   endTime: string | null;
   completed: boolean;
+  /** True when the session was cancelled before finishing; it is logged but never counted. */
+  cancelled?: boolean;
+  /** Number of interruptions noted during the session (absent in older data). */
+  interruptions?: number;
 }
 
 export interface AppData {

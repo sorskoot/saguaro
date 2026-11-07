@@ -58,6 +58,14 @@
   font-style: italic;
 }
 
+/* ─── Interruptions ──────────────────────────────────────── */
+.interruptions {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* ─── Badge ──────────────────────────────────────────────── */
 .badge {
   font-size: 0.7rem;
@@ -103,5 +111,9 @@
   .badge {
     grid-column: 3;
     grid-row: 1;
+  }
+
+  .interruptions {
+    grid-column: 2 / -1;
   }
 }

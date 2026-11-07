@@ -47,6 +47,24 @@ describe('useSessions', () => {
     expect(s.endTime!.length).toBeGreaterThan(0);
   });
 
+  it('cancelSession logs the session as cancelled, not completed', () => {
+    const { result } = renderHook(() => useSessions());
+
+    act(() => {
+      result.current.addSession('work', null);
+    });
+    const id = result.current.sessions[0].id;
+
+    act(() => {
+      result.current.cancelSession(id);
+    });
+
+    const s = result.current.sessions[0];
+    expect(s.completed).toBe(false);
+    expect(s.cancelled).toBe(true);
+    expect(typeof s.endTime).toBe('string');
+  });
+
   it('deleteSession removes the session', () => {
     const { result } = renderHook(() => useSessions());
 

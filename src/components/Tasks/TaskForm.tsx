@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import type { Task } from '../../types';
+import type { Task, TaskDetails } from '../../types';
 import styles from './TaskForm.module.css';
 
 interface TaskFormProps {
   initial?: Partial<Task>;
-  onSubmit: (name: string, color: string, estimatedPomodoros: number) => void;
+  onSubmit: (
+    name: string,
+    color: string,
+    estimatedPomodoros: number,
+    details: TaskDetails,
+  ) => void;
   onCancel?: () => void;
 }
 
@@ -17,13 +22,18 @@ export default function TaskForm({ initial, onSubmit, onCancel }: TaskFormProps)
   const [estimatedPomodoros, setEstimatedPomodoros] = useState(
     String(initial?.estimatedPomodoros ?? 1),
   );
+  const [description, setDescription] = useState(initial?.description ?? '');
+  const [link, setLink] = useState(initial?.link ?? '');
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!e.currentTarget.reportValidity()) return;
     const trimmed = name.trim();
     if (!trimmed) return;
-    onSubmit(trimmed, color, Number(estimatedPomodoros));
+    onSubmit(trimmed, color, Number(estimatedPomodoros), {
+      description: description.trim() || undefined,
+      link: link.trim() || undefined,
+    });
   }
 
   return (
@@ -58,6 +68,38 @@ export default function TaskForm({ initial, onSubmit, onCancel }: TaskFormProps)
           value={estimatedPomodoros}
           onChange={(e) => setEstimatedPomodoros(e.target.value)}
           required
+        />
+      </div>
+
+      <div className={styles.row}>
+        <label className={styles.label} htmlFor="task-description">
+          Description (optional)
+        </label>
+        <textarea
+          id="task-description"
+          className={`${styles.input} ${styles.textarea}`}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="What is this task about?"
+          rows={3}
+          maxLength={500}
+        />
+      </div>
+
+      <div className={styles.row}>
+        <label className={styles.label} htmlFor="task-link">
+          Link (optional)
+        </label>
+        <input
+          id="task-link"
+          className={styles.input}
+          type="url"
+          value={link}
+          onChange={(e) => setLink(e.target.value)}
+          placeholder="https://github.com/owner/repo/issues/1"
+          pattern="https?://.+"
+          title="Enter an http:// or https:// URL"
+          maxLength={2000}
         />
       </div>
 

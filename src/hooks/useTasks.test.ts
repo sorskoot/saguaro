@@ -30,6 +30,24 @@ describe('useTasks', () => {
     expect(task.createdAt.length).toBeGreaterThan(0);
   });
 
+  it('addTask stores an optional description and link', () => {
+    const { result } = renderHook(() => useTasks());
+
+    act(() => {
+      result.current.addTask('With details', '#ff0000', 1, {
+        description: 'Some notes',
+        link: 'https://example.com/issue/1',
+      });
+      result.current.addTask('Without details', '#ff0000', 1, {});
+    });
+
+    const [withDetails, withoutDetails] = result.current.tasks;
+    expect(withDetails.description).toBe('Some notes');
+    expect(withDetails.link).toBe('https://example.com/issue/1');
+    expect(withoutDetails).not.toHaveProperty('description');
+    expect(withoutDetails).not.toHaveProperty('link');
+  });
+
   it('archiveTask removes the task from the returned list but keeps it in storage', () => {
     const { result } = renderHook(() => useTasks());
 

@@ -11,6 +11,7 @@ import type {
 export interface UseTimerOptions {
     settings: Settings;
     onComplete?: (mode: SessionType) => void;
+    onCancel?: (mode: SessionType) => void;
 }
 
 export interface UseTimerResult {
@@ -20,6 +21,8 @@ export interface UseTimerResult {
     pomodoroCount: number;
     start: () => void;
     pause: () => void;
+    /** Cancels the running session: it is logged as cancelled, not counted, and the clock resets. */
+    cancel: () => void;
     reset: () => void;
     skip: () => void;
     changeMode: (mode: SessionType) => void;
@@ -76,6 +79,7 @@ function notifyCompletion(mode: SessionType): void {
 export function useTimer({
     settings,
     onComplete,
+    onCancel,
 }: UseTimerOptions): UseTimerResult {
     const [mode, setMode] = useState<SessionType>('work');
     const [secondsLeft, setSecondsLeft] = useState<number>(
@@ -92,6 +96,7 @@ export function useTimer({
     const pomodoroCountRef = useRef(pomodoroCount);
     const settingsRef = useRef(settings);
     const onCompleteRef = useRef(onComplete);
+    const onCancelRef = useRef(onCancel);
     // tickRef lets advanceMode always call the live tick without a forward-reference closure bug.
     const tickRef = useRef<TimerCallback>(() => {});
     const workerRef = useRef<Worker | null>(null);
@@ -121,6 +126,9 @@ export function useTimer({
     useEffect(() => {
         onCompleteRef.current = onComplete;
     }, [onComplete]);
+    useEffect(() => {
+        onCancelRef.current = onCancel;
+    }, [onCancel]);
 
     // When settings change, reset the timer to the new duration for the current mode
     // only if it is not currently running.
@@ -317,6 +325,17 @@ export function useTimer({
         stopActiveTimer();
     }, [stopActiveTimer]);
 
+    const cancel = useCallback(() => {
+        stopActiveTimer();
+        // Log the cancellation, then reset the clock in the same mode: no
+        // count increment, no break, no sound/notification.
+        const cancelledMode = modeRef.current;
+        onCancelRef.current?.(cancelledMode);
+        const duration = durationFor(cancelledMode, settingsRef.current);
+        setSecondsLeft(duration);
+        secondsLeftRef.current = duration;
+    }, [stopActiveTimer]);
+
     const reset = useCallback(() => {
         stopActiveTimer();
         const duration = durationFor(modeRef.current, settingsRef.current);
@@ -374,6 +393,7 @@ export function useTimer({
         pomodoroCount,
         start,
         pause,
+        cancel,
         reset,
         skip,
         changeMode,
