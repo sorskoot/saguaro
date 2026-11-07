@@ -1,25 +1,25 @@
 TODO:
     General:
-        ✓ Rename Projects to Tasks. In pomodoro you work on a Task for a number of Pomodoros. @done(26-10-27 21:11)
+        ✓ Rename Projects to Tasks. You work on a Task for a number of Spikes. @done(26-10-27 21:11)
         ✓ Add functionality to select a task in the Tasks tab and that task becomes the active task. This task is selected in the Timer view too. When adding a new task, that task is selected. @done(26-10-27 21:42)
-        ✓ Assign a number of Pomodoros to each task. @done(26-10-27 21:43)
-        ✓ Visualize the number of Pomodoros assigned to a task on the timer view as the little circles. @done(26-10-27 22:24)
-        ✓ Add more circles if more pomodoros are needed when working on a task. Give these a different color. @done(26-11-07 11:11)
-        ✓ Add a button to note when an interuption occurs. @done(26-11-07 11:24)
+        ✓ Assign a number of Spikes to each task. @done(26-10-27 21:43)
+        ✓ Visualize the number of Spikes assigned to a task on the timer view as the little circles. @done(26-10-27 22:24)
+        ✓ Add more circles if more Spikes are needed when working on a task. Give these a different color. @done(26-11-07 11:11)
+        ✓ Add a button to note when an interruption occurs. @done(26-11-07 11:24)
         ✓ A Spike can be cancelled (not paused). Cancel asks for confirmation, then logs the Spike as cancelled and resets the clock. A cancelled Spike is not counted and does not trigger a break. @done(26-11-07 12:00)
         ✓ Improve responsiveness @done(26-10-27 22:42)
 
     History:
-        ✓ Record the number of Pomodoros completed for each task. @done(26-11-07)
-        ✓ Record interruptions for each task. @done(26-11-07)
+        ✓ Record the number of Spikes completed for each task. @done(26-11-07 12:00)
+        ✓ Record interruptions for each task. @done(26-11-07 12:00)
 
     Tasks:
-        ✓ Add an optional description for a task. @done(26-11-07)
-        ✓ Add an optional link to a tasks. So a task can be linked to an issue on GitHub. @done(26-11-07)
+        ✓ Add an optional description for a task. @done(26-11-07 12:00)
+        ✓ Add an optional link to a tasks. So a task can be linked to an issue on GitHub. @done(26-11-07 12:00)
 
 ADHD / AI Driven Development:
     ## Ideas
-    See docs/ADHD-AI-Development.md
+    See docs/Saguaro.md
     ☐ Task states: Active / Waiting / Done, soft cap of 3 Active tasks.
     ☐ Next action and "where was I" note per task.
     ☐ Parking lot for intrusive thoughts.
