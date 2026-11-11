@@ -73,6 +73,7 @@ The first time the app opens each day, it shows the open tasks with their *where
 
 | State      | Meaning                                                         |
 | ---------- | --------------------------------------------------------------- |
+| **Open**   | Not being worked on by anyone. The default for new tasks.       |
 | **Focus**  | You're on it. The current Spike is about this task.             |
 | **Waiting**| Someone or something else is on it: an agent, a colleague, the oven. |
 | **Asking** | It needs your input to continue.                                |
@@ -80,7 +81,7 @@ The first time the app opens each day, it shows the open tasks with their *where
 | **Done**   | Finished. Can happen any time, including during a break.        |
 
 - With the bridge, agents set these states. Without it, you set them by hand. It's the same model either way.
-- **Exactly one Focus task.** Switching Focus is one tap and is logged.
+- **Exactly one Focus task.** Switching Focus is one tap and is logged. The task you switch away from becomes Open.
 - **Soft cap of 3** on Waiting + Asking + Ready. Above it, a gentle note appears. It never blocks anything.
 - Done replaces today's *archived* flag.
 
@@ -179,10 +180,17 @@ Agents are linked by **task code**. You tell the agent "working on #k3", or set 
 ## Rename and rollout
 
 - Rename the app, manifest, icons and page title to **Saguaro**, and the package name from `sorskoot-pomodoro` to `saguaro`.
-- **Fresh start**: new storage keys, no migration of the old data.
-- **One release.** Everything in this doc ships together; there are no intermediate phases.
+- **Fresh start**: data moves to a new IndexedDB database. The current `saguaro_*` localStorage keys are not migrated; export them with the existing JSON export first if you want to keep them.
+- **Ship incrementally through PRs.** Nothing is committed to `main` directly. Each piece of work lands as a PR, and a merged PR goes live on GitHub Pages straight away. Every merge should leave the app usable.
+
+## Storage
+
+- All data lives in **IndexedDB**, behind the existing repository interfaces. The app requests persistent storage so the browser doesn't evict it.
+- The raw event log is append-only and never compacted, since it only grows and any metric might be derived from it later.
 
 ## Decided defaults (revisit if wrong)
+
+- **Open** is not counted toward the soft cap.
 
 - *Asking* and *Ready* both count toward the soft cap.
 - A Spike ended early still counts toward the 4-Spike long-break cycle.
