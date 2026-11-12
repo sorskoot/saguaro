@@ -8,9 +8,22 @@ On the Timer page, windows at most 550px wide and 300px high show only the count
 centered and scaled to fit. The timer keeps running; enlarge either dimension beyond
 that breakpoint to restore navigation and controls.
 
-On the Tasks page, enable **Show archived tasks** to include archived tasks in the list.
-Archived tasks are labeled and can be edited or deleted, but cannot be selected for the timer.
+Tasks have a state (Open, Focus, Waiting, Asking, Ready or Done). On the Tasks page, mark a task
+as done with the checkmark button and enable **Show done tasks** to include done tasks in the list.
+Done tasks are labeled and can be edited or deleted, but cannot be selected for the timer.
 They remain hidden by default and in the timer's task selector.
+
+## Data
+
+All data (tasks, sessions, settings, the event log and the parking lot) is stored in the browser's
+IndexedDB, in a database called `saguaro`, and the app asks the browser to keep it from being evicted.
+Data from before this change lived in `localStorage` and is not migrated: the app starts fresh.
+Export a JSON backup from **Settings** while on the old version if you want to keep it; backups from
+the old version can still be imported and are converted to the new format.
+
+Every state change (task states, Spike and break start/end, interruptions, focus switches) is also
+written to an append-only event log, so new metrics can be derived later. The event log is included
+in exports and is never compacted.
 
 ## Development
 
@@ -66,7 +79,8 @@ npm run preview
 ```
 src/
   hooks/        React hooks (useTimer, useSettings, useSessions, ...)
-  services/     Domain services and repositories (TimerService, StorageService, ...)
+  services/     Domain services and repositories (TimerService, TaskRepository, EventLogRepository, ...)
+  services/db/  IndexedDB layer (DataStore, CollectionStore)
   components/   Shared UI components
   pages/        Route-level page components
   utils/        Pure utility functions

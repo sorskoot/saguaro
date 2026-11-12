@@ -28,10 +28,12 @@ beforeEach(() => {
 /** Builds a minimal valid AppData payload. */
 function makeAppData(overrides: Partial<AppData> = {}): AppData {
   return {
-    version: '1.0',
+    version: '2.0',
     settings: { ...DEFAULT_SETTINGS },
     tasks: [],
     sessions: [],
+    events: [],
+    parkingLot: [],
     exportedAt: new Date().toISOString(),
     ...overrides,
   };

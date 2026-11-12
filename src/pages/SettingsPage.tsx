@@ -11,7 +11,10 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { exportToFile, importFromFile } = useExport({
-    onSuccess: () => alert('Import successful! The page will reload to apply changes.'),
+    onSuccess: () => {
+      alert('Import successful! The page will reload to apply changes.');
+      window.location.reload();
+    },
     onError: (msg) => alert(`Import failed: ${msg}`),
   });
 

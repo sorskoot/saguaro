@@ -76,6 +76,8 @@ export function useExport({
                 const text = await file.text();
                 const parsed: unknown = JSON.parse(text);
                 service.importData(parsed);
+                // The page reloads after a successful import, so make sure it is all saved first.
+                await getDataStore().flush();
                 onSuccess?.();
             } catch (err) {
                 const msg =

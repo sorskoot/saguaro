@@ -165,10 +165,16 @@ export type NewAppEvent = AppEvent extends infer E
     : never
   : never;
 
+/** Version of the backup file format written by the export. */
+export const APP_DATA_VERSION = '2.0';
+
 export interface AppData {
   version: string;
   settings: Settings;
   tasks: Task[];
   sessions: Session[];
+  /** The raw event log, oldest first. */
+  events: AppEvent[];
+  parkingLot: ParkingLotItem[];
   exportedAt: string;
 }
