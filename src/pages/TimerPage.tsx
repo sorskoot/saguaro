@@ -10,6 +10,7 @@ import TimerPictureInPicture from '../components/Timer/TimerPictureInPicture';
 import TaskSelector from '../components/TaskSelector';
 import type { SessionType } from '../types';
 import type { Settings } from '../types';
+import { logEvent } from '../services/eventLog';
 import styles from './TimerPage.module.css';
 
 function getTotalSeconds(mode: SessionType, settings: Settings): number {
@@ -35,7 +36,9 @@ export default function TimerPage() {
   const handleInterrupt = useCallback(() => {
     interruptionsRef.current += 1;
     setInterruptions(interruptionsRef.current);
-  }, []);
+    // The Spike's session record is only created when it ends, so there is no session id yet.
+    logEvent({ type: 'interruption', sessionId: null, taskId: selectedTaskId });
+  }, [selectedTaskId]);
 
   const handleComplete = useCallback(
     (completedMode: SessionType) => {

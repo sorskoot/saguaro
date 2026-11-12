@@ -4,6 +4,7 @@ import type { UseTimerOptions } from '../hooks/useTimer';
 import type { Session, SessionType, Task } from '../types';
 import TimerPage from './TimerPage';
 import { getDataStore } from '../services/db/DataStore';
+import { EventLogRepository } from '../services/EventLogRepository';
 
 vi.mock('../hooks/useTimer');
 
@@ -100,5 +101,20 @@ describe('TimerPage Spike circles', () => {
     localStorage.setItem('saguaro:selectedTaskId', JSON.stringify('deleted'));
     render(<TimerPage />);
     expectDots(4, 1, 'cycle');
+  });
+});
+
+describe('TimerPage event log', () => {
+  it('logs an interruption against the selected task', () => {
+    vi.mocked(useTimer).mockReturnValue({
+      secondsLeft: 1000, isRunning: true, mode: 'spike', pomodoroCount: 0,
+      start: vi.fn(), pause: vi.fn(), cancel: vi.fn(), reset: vi.fn(), skip: vi.fn(), changeMode: vi.fn(),
+    });
+    render(<TimerPage />);
+    fireEvent.click(screen.getByTitle('Note an interruption'));
+
+    expect(new EventLogRepository(getDataStore().events).findAll()).toMatchObject([
+      { type: 'interruption', sessionId: null, taskId: 'first' },
+    ]);
   });
 });

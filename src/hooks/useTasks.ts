@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { TaskRepository } from '../services/TaskRepository';
 import { getDataStore } from '../services/db/DataStore';
+import { logEvent } from '../services/eventLog';
 import { generateId } from '../utils/id';
 import type { Task, TaskDetails, TaskState } from '../types';
 
@@ -76,38 +77,60 @@ export function useTasks(includeDone = false): UseTasksResult {
                 createdAt: new Date().toISOString(),
             };
             repo.save(task);
+            logEvent({
+                type: 'task-state-change',
+                taskId: task.id,
+                from: null,
+                to: task.state,
+                source: 'user',
+            });
             setAllTasks((prev) => [...prev, task]);
             return task;
         },
         [repo],
     );
 
+    // Persisting and logging happen outside the state updater: React may run
+    // updaters twice (StrictMode), which would write every event twice.
     const updateTask = useCallback(
         (id: string, partial: Partial<Task>) => {
-            setAllTasks((prev) => {
-                const existing = prev.find((task) => task.id === id);
-                const updated: Task = existing
-                    ? { ...existing, ...partial, id }
-                    : ({ ...partial, id } as Task);
-                repo.save(updated);
-                return existing
+            const existing = repo.findById(id);
+            const updated: Task = existing
+                ? { ...existing, ...partial, id }
+                : ({ ...partial, id } as Task);
+            repo.save(updated);
+            if (updated.state !== existing?.state) {
+                logEvent({
+                    type: 'task-state-change',
+                    taskId: id,
+                    from: existing?.state ?? null,
+                    to: updated.state,
+                    source: 'user',
+                });
+            }
+            setAllTasks((prev) =>
+                prev.some((task) => task.id === id)
                     ? prev.map((task) => (task.id === id ? updated : task))
-                    : [...prev, updated];
-            });
+                    : [...prev, updated],
+            );
         },
         [repo],
     );
 
     const setTaskState = useCallback(
         (id: string, state: TaskState) => {
-            setAllTasks((prev) => {
-                return prev.map((task) => {
-                    if (task.id !== id) return task;
-                    const updated = { ...task, state };
-                    repo.save(updated);
-                    return updated;
-                });
+            const existing = repo.findById(id);
+            if (!existing || existing.state === state) return;
+            const updated: Task = { ...existing, state };
+            repo.save(updated);
+            logEvent({
+                type: 'task-state-change',
+                taskId: id,
+                from: existing.state,
+                to: state,
+                source: 'user',
             });
+            setAllTasks((prev) => prev.map((task) => (task.id === id ? updated : task)));
         },
         [repo],
     );

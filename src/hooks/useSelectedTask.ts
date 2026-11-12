@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { getStorageService } from '../services/StorageService';
+import { logEvent } from '../services/eventLog';
 
 const STORAGE_KEY = 'saguaro:selectedTaskId';
 
@@ -16,7 +17,14 @@ export function useSelectedTask(): UseSelectedTaskResult {
         getStorageService().get<string>(STORAGE_KEY),
     );
 
+    // The latest value, so the callback stays stable and still knows what it is switching from.
+    const currentRef = useRef(selectedTaskId);
+
     const setSelectedTaskId = useCallback((id: string | null) => {
+        if (id !== currentRef.current) {
+            logEvent({ type: 'focus-switch', fromTaskId: currentRef.current, toTaskId: id });
+            currentRef.current = id;
+        }
         const storage = getStorageService();
         if (id === null) storage.remove(STORAGE_KEY);
         else storage.set(STORAGE_KEY, id);
