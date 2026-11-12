@@ -194,3 +194,56 @@ describe('TasksPage states', () => {
     expect(getDataStore().tasks.findById('4')?.state).toBe('waiting');
   });
 });
+
+describe('TasksPage where-was-I prompt', () => {
+  const t = (id: string, state: Task['state'], extra: Partial<Task> = {}): Task => ({
+    id, name: `Task ${id}`, color: '#ff0000', createdAt: id, state, ...extra,
+  });
+  const rowOf = (name: string) => screen.getByText(name).closest('li')!;
+
+  it('asks when you switch Focus to another task and saves the note', () => {
+    getDataStore().tasks.replaceAll([t('a', 'focus'), t('b', 'open')]);
+    render(<TasksPage />);
+    fireEvent.click(within(rowOf('Task b')).getByRole('button', { name: 'Focus' }));
+
+    fireEvent.change(screen.getByLabelText(/Where were you on “Task a”/), {
+      target: { value: 'Halfway through the parser' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(getDataStore().tasks.findById('a')).toMatchObject({
+      state: 'open',
+      whereWasI: 'Halfway through the parser',
+    });
+    expect(screen.queryByRole('form', { name: 'Where was I' })).not.toBeInTheDocument();
+  });
+
+  it('asks when the Focus task is handed off, and Skip changes nothing', () => {
+    getDataStore().tasks.replaceAll([t('a', 'focus', { whereWasI: 'Old note' })]);
+    render(<TasksPage />);
+    fireEvent.click(within(rowOf('Task a')).getByRole('button', { name: 'Waiting' }));
+    expect(screen.getByLabelText(/Where were you on “Task a”/)).toHaveValue('Old note');
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+
+    expect(getDataStore().tasks.findById('a')).toMatchObject({ state: 'waiting', whereWasI: 'Old note' });
+    expect(screen.queryByRole('form', { name: 'Where was I' })).not.toBeInTheDocument();
+  });
+
+  it('can be dismissed with Escape', () => {
+    getDataStore().tasks.replaceAll([t('a', 'focus')]);
+    render(<TasksPage />);
+    fireEvent.click(within(rowOf('Task a')).getByRole('button', { name: 'Open' }));
+    fireEvent.keyDown(screen.getByLabelText(/Where were you on/), { key: 'Escape' });
+    expect(screen.queryByRole('form', { name: 'Where was I' })).not.toBeInTheDocument();
+  });
+
+  it('does not ask when finishing the Focus task, or when nothing was in Focus', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    getDataStore().tasks.replaceAll([t('a', 'open'), t('b', 'focus')]);
+    render(<TasksPage />);
+    fireEvent.click(within(rowOf('Task b')).getByRole('button', { name: 'Done' }));
+    expect(screen.queryByRole('form', { name: 'Where was I' })).not.toBeInTheDocument();
+    fireEvent.click(within(rowOf('Task a')).getByRole('button', { name: 'Focus' }));
+    expect(screen.queryByRole('form', { name: 'Where was I' })).not.toBeInTheDocument();
+  });
+});

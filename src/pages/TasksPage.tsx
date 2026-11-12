@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTasks } from '../hooks/useTasks';
 import { useSessions } from '../hooks/useSessions';
-import { TaskForm, TaskItem } from '../components/Tasks';
+import { TaskForm, TaskItem, WhereWasIPrompt } from '../components/Tasks';
 import { STATE_LABELS } from '../components/Tasks/TaskItem';
 import { countInPlay, exceedsSoftCap } from '../utils/softCap';
 import type { Task, TaskDetails, TaskState } from '../types';
@@ -21,6 +21,8 @@ export default function TasksPage() {
     useTasks(showDone);
   const { sessions } = useSessions();
   const [formState, setFormState] = useState<FormState>({ mode: 'hidden' });
+  // The task you just left Focus on, while the where-was-I prompt is open.
+  const [leftFocusId, setLeftFocusId] = useState<string | null>(null);
 
   function getSessionCount(taskId: string): number {
     return sessions.filter((session) => session.taskId === taskId && session.completed).length;
@@ -65,6 +67,9 @@ export default function TasksPage() {
     ) {
       return;
     }
+    // Leaving Focus (to another task, or to any state but Done) offers a where-was-I note.
+    if (task.state === 'focus' && state !== 'done') setLeftFocusId(task.id);
+    else if (state === 'focus' && focusTaskId !== null) setLeftFocusId(focusTaskId);
     setTaskState(task.id, state);
   }
 
@@ -78,6 +83,7 @@ export default function TasksPage() {
     }
   }
 
+  const leftFocus = tasks.find((task) => task.id === leftFocusId);
   const isEditing = (id: string) => formState.mode === 'edit' && formState.task.id === id;
 
   return (
@@ -114,6 +120,19 @@ export default function TasksPage() {
           {countInPlay(tasks)} tasks are waiting on something or someone. That is a lot to hold in
           mind: maybe check in on one, or let one go.
         </p>
+      )}
+
+      {leftFocus && (
+        <WhereWasIPrompt
+          key={leftFocus.id}
+          taskName={leftFocus.name}
+          initial={leftFocus.whereWasI}
+          onSave={(note) => {
+            updateTask(leftFocus.id, { whereWasI: note || undefined });
+            setLeftFocusId(null);
+          }}
+          onSkip={() => setLeftFocusId(null)}
+        />
       )}
 
       {formState.mode === 'add' && (
