@@ -104,3 +104,13 @@ describe('Timer interruption button', () => {
     expect(screen.queryByRole('button', { name: /interruption/i })).toBeNull();
   });
 });
+
+describe('Timer rest screen', () => {
+  it('hides the Spike circles while resting', () => {
+    const { rerender } = render(<Timer {...baseProps} />);
+    expect(screen.getByRole('img', { name: /Spikes completed/ })).toBeInTheDocument();
+    rerender(<Timer {...baseProps} phase="break" mode="short-break" />);
+    expect(screen.queryByRole('img', { name: /Spikes completed/ })).toBeNull();
+    expect(screen.getByText(/Rest\./)).toBeInTheDocument();
+  });
+});

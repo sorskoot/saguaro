@@ -203,3 +203,18 @@ describe('TimerPage Spike circles without an estimate', () => {
     expectDots(4, 1, 'cycle');
   });
 });
+
+describe('TimerPage rest screen', () => {
+  it('shows the task picker outside breaks and hides it during one', () => {
+    const { unmount } = render(<TimerPage />);
+    expect(screen.getByLabelText('Task:')).toBeInTheDocument();
+    unmount();
+
+    vi.mocked(useTimer).mockImplementation(() =>
+      timerResult({ phase: 'break', mode: 'short-break', isRunning: true, secondsLeft: 200, totalSeconds: 300 }),
+    );
+    render(<TimerPage />);
+    expect(screen.queryByLabelText('Task:')).toBeNull();
+    expect(screen.queryByText('First task')).toBeNull();
+  });
+});

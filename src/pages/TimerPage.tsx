@@ -102,6 +102,8 @@ export default function TimerPage() {
           session.taskId === selectedTask.id && session.type === 'spike' && session.completed,
       ).length
     : timer.spikeCount;
+  // Breaks are a rest screen: no tasks, no agent state, no parking lot.
+  const resting = timer.phase === 'break' || timer.phase === 'reentry';
   const overtimeShown = timer.phase === 'spike' && timer.secondsLeft === 0;
 
   return (
@@ -126,11 +128,13 @@ export default function TimerPage() {
         overtimeSeconds={overtimeShown ? timer.overtimeSeconds : undefined}
         label={timer.mode === 'spike' ? 'Spike' : 'Break'}
       />
-      <TaskSelector
-        tasks={tasks}
-        selectedId={selectedTaskId}
-        onChange={setSelectedTaskId}
-      />
+      {!resting && (
+        <TaskSelector
+          tasks={tasks}
+          selectedId={selectedTaskId}
+          onChange={setSelectedTaskId}
+        />
+      )}
     </div>
   );
 }
