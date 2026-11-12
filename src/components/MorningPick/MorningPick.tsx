@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTasks } from '../../hooks/useTasks';
 import { useSelectedTask } from '../../hooks/useSelectedTask';
 import { getStorageService } from '../../services/StorageService';
 import { dayKey } from '../../utils/day';
+import { isTimerActive } from '../../services/timerActivity';
 import type { Task } from '../../types';
 import styles from './MorningPick.module.css';
 
@@ -58,12 +59,25 @@ export default function MorningPick({ children }: { children: ReactNode }) {
     () => getStorageService().get<string>(MORNING_PICK_STORAGE_KEY) !== today,
   );
 
+  // An overnight tab: when it becomes visible on a new day, offer the pick again,
+  // unless a Spike or break is running (the gate would unmount its timer).
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible' || isTimerActive()) return;
+      if (getStorageService().get<string>(MORNING_PICK_STORAGE_KEY) !== dayKey()) {
+        setPending(true);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
+
   const candidates = tasks.filter((task) => task.state === 'open' || task.state === 'focus');
 
   if (!pending || candidates.length === 0) return <>{children}</>;
 
   const finish = () => {
-    getStorageService().set(MORNING_PICK_STORAGE_KEY, today);
+    getStorageService().set(MORNING_PICK_STORAGE_KEY, dayKey());
     setPending(false);
   };
 

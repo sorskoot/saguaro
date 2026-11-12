@@ -286,3 +286,26 @@ describe('guards', () => {
         expect(result.current.secondsLeft).toBe(1800);
     });
 });
+
+describe('leaving the page', () => {
+    it('closes a running Spike and an open break', () => {
+        const onSpikeEnd = vi.fn();
+        const onBreakEnd = vi.fn();
+        const first = setup({ onSpikeEnd, onBreakEnd });
+        beginSession(() => first.result.current.start());
+        vi.setSystemTime(sessionStart + 90_000);
+        first.unmount();
+        expect(onSpikeEnd).toHaveBeenCalledWith({ endedEarly: false, overtimeSeconds: 30 });
+
+        const second = setup({ onSpikeEnd, onBreakEnd });
+        spikeThenBreak(second.result);
+        second.unmount();
+        expect(onBreakEnd).toHaveBeenCalledWith({ overrunSeconds: 0 });
+    });
+
+    it('records nothing when idle', () => {
+        const onSpikeEnd = vi.fn();
+        setup({ onSpikeEnd }).unmount();
+        expect(onSpikeEnd).not.toHaveBeenCalled();
+    });
+});

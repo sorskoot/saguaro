@@ -19,4 +19,11 @@ describe('dayKey', () => {
     expect(dayKey(new Date(2027, 0, 1, 2, 0))).toBe('2026-12-31');
     expect(dayKey(new Date(2026, 11, 1, 3, 0))).toBe('2026-11-30');
   });
+
+  it('does not drift on daylight-saving transition days', () => {
+    // Local-time construction: holds in any zone, and 04:00 is always a new day.
+    expect(dayKey(new Date(2026, 2, 8, 4, 0))).toBe('2026-03-08');
+    expect(dayKey(new Date(2026, 10, 1, 3, 30))).toBe('2026-10-31');
+    expect(dayKey(new Date(2026, 10, 1, 4, 0))).toBe('2026-11-01');
+  });
 });

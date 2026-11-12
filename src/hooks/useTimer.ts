@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { timerService } from '../services/TimerService';
 import { playChime } from '../utils/sound';
+import { setTimerActive } from '../services/timerActivity';
 import type { Settings } from '../types';
 import type {
     TimerWorkerCommand,
@@ -113,6 +114,7 @@ export function useTimer({
 
     const setPhase = useCallback((next: TimerPhase) => {
         phaseRef.current = next;
+        setTimerActive(next === 'spike' || next === 'break');
         setPhaseState(next);
     }, []);
 
@@ -163,7 +165,11 @@ export function useTimer({
         );
         workerRef.current = worker;
         worker.onmessage = (event: MessageEvent<TimerWorkerEvent>) => {
-            if (event.data.type === 'tick') {
+            // A tick queued before the clock was restarted belongs to the old session.
+            if (
+                event.data.type === 'tick' &&
+                event.data.startedAt === startedAtRef.current
+            ) {
                 handleElapsedRef.current(event.data.elapsedSeconds);
             }
         };
@@ -298,9 +304,28 @@ export function useTimer({
         setElapsedSeconds(0);
     }, [finishBreak, setPhase, setElapsedSeconds]);
 
+    // Leaving the page stops the clock, so close whatever is still recorded as running.
     useEffect(() => {
-        return () => timerService.stop();
-    }, []);
+        return () => {
+            const current = phaseRef.current;
+            if (current === 'spike') {
+                const minimum = settingsRef.current.spikeMinimum * 60;
+                const seconds = Math.max(
+                    elapsedRef.current,
+                    Math.floor((Date.now() - startedAtRef.current) / 1000),
+                );
+                callbacksRef.current.onSpikeEnd?.({
+                    endedEarly: seconds < minimum,
+                    overtimeSeconds: Math.max(0, seconds - minimum),
+                });
+            } else if (breakOpenRef.current) {
+                finishBreak();
+            }
+            phaseRef.current = 'idle';
+            setTimerActive(false);
+            timerService.stop();
+        };
+    }, [finishBreak]);
 
     const spikeTotal = settings.spikeMinimum * 60;
     const inBreak = phase === 'break' || phase === 'reentry';

@@ -31,7 +31,7 @@ function startLoop(): void {
             0,
             Math.floor((Date.now() - startedAtMs) / 1000),
         );
-        emit({ type: 'tick', elapsedSeconds });
+        emit({ type: 'tick', startedAt: startedAtMs, elapsedSeconds });
     }, 1000);
 }
 
