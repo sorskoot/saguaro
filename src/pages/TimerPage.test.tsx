@@ -9,7 +9,7 @@ import { EventLogRepository } from '../services/EventLogRepository';
 vi.mock('../hooks/useTimer');
 
 const tasks: Task[] = [
-  { id: 'first', name: 'First task', color: '#e74c3c', estimatedSpikes: 3, createdAt: '', state: 'open' },
+  { id: 'first', name: 'First task', color: '#e74c3c', estimatedSpikes: 3, createdAt: '', state: 'focus' },
   { id: 'second', name: 'Second task', color: '#e74c3c', estimatedSpikes: 6, createdAt: '', state: 'open' },
 ];
 
@@ -38,7 +38,6 @@ function expectDots(total: number, filled: number, scope = 'task') {
 beforeEach(() => {
   localStorage.clear();
   getDataStore().tasks.replaceAll(tasks);
-  localStorage.setItem('saguaro:selectedTaskId', JSON.stringify('first'));
   getDataStore().sessions.replaceAll([
     session('one', 'first'),
     session('break', 'first', 'short-break'),
@@ -109,8 +108,8 @@ describe('TimerPage Spike circles', () => {
     expectDots(3, 1);
   });
 
-  it('falls back to the cycle indicator for a deleted selected task', () => {
-    localStorage.setItem('saguaro:selectedTaskId', JSON.stringify('deleted'));
+  it('falls back to the cycle indicator when no task is in Focus', () => {
+    getDataStore().tasks.replaceAll(tasks.map((task) => ({ ...task, state: 'open' as const })));
     render(<TimerPage />);
     expectDots(4, 1, 'cycle');
   });

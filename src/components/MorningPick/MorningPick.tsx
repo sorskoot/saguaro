@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTasks } from '../../hooks/useTasks';
-import { useSelectedTask } from '../../hooks/useSelectedTask';
 import { getStorageService } from '../../services/StorageService';
 import { dayKey } from '../../utils/day';
 import { isTimerActive } from '../../services/timerActivity';
@@ -51,8 +50,7 @@ export function MorningPickView({ tasks, onPick, onSkip }: MorningPickViewProps)
  * as today's visit.
  */
 export default function MorningPick({ children }: { children: ReactNode }) {
-  const { tasks } = useTasks();
-  const { setSelectedTaskId } = useSelectedTask();
+  const { tasks, setFocus } = useTasks();
   const today = dayKey();
 
   const [pending, setPending] = useState(
@@ -85,7 +83,7 @@ export default function MorningPick({ children }: { children: ReactNode }) {
     <MorningPickView
       tasks={candidates}
       onPick={(taskId) => {
-        setSelectedTaskId(taskId);
+        setFocus(taskId);
         finish();
       }}
       onSkip={finish}

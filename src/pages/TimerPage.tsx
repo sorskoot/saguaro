@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState } from 'react';
-import { useSelectedTask } from '../hooks/useSelectedTask';
 import { useSettings } from '../hooks/useSettings';
 import { useTimer } from '../hooks/useTimer';
 import type { BreakType, SpikeEndInfo } from '../hooks/useTimer';
@@ -64,9 +63,8 @@ function ReEntryContainer({
 
 export default function TimerPage() {
   const { settings } = useSettings();
-  const { tasks, addTask } = useTasks();
+  const { tasks, addTask, focusTaskId: selectedTaskId, setFocus: setSelectedTaskId } = useTasks();
   const { sessions, addSession, completeSession, cancelSession } = useSessions();
-  const { selectedTaskId, setSelectedTaskId } = useSelectedTask();
 
   const [interruptions, setInterruptions] = useState(0);
   const interruptionsRef = useRef(0);

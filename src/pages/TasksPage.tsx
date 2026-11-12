@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useTasks } from '../hooks/useTasks';
 import { useSessions } from '../hooks/useSessions';
-import { useSelectedTask } from '../hooks/useSelectedTask';
-import { TaskForm, TaskItem } from '../components/Tasks';
-import type { Task, TaskDetails } from '../types';
+import { useSettings } from '../hooks/useSettings';
+import { TaskForm, TaskItem, WhereWasIPrompt } from '../components/Tasks';
+import { STATE_LABELS } from '../components/Tasks/TaskItem';
+import { countInPlay, exceedsSoftCap } from '../utils/softCap';
+import type { Task, TaskDetails, TaskState } from '../types';
 import styles from './TasksPage.module.css';
 
 type FormState =
@@ -11,12 +13,18 @@ type FormState =
   | { mode: 'add' }
   | { mode: 'edit'; task: Task };
 
+/** Needs you first, then what is in play, then the rest. */
+const GROUP_ORDER: readonly TaskState[] = ['focus', 'asking', 'ready', 'waiting', 'open', 'done'];
+
 export default function TasksPage() {
   const [showDone, setShowDone] = useState(false);
-  const { tasks, addTask, updateTask, setTaskState, deleteTask } = useTasks(showDone);
+  const { tasks, focusTaskId, setFocus, addTask, updateTask, setTaskState, deleteTask } =
+    useTasks(showDone);
   const { sessions } = useSessions();
-  const { selectedTaskId, setSelectedTaskId } = useSelectedTask();
+  const { settings } = useSettings();
   const [formState, setFormState] = useState<FormState>({ mode: 'hidden' });
+  // The task you just left Focus on, while the where-was-I prompt is open.
+  const [leftFocusId, setLeftFocusId] = useState<string | null>(null);
 
   function getSessionCount(taskId: string): number {
     return sessions.filter((session) => session.taskId === taskId && session.completed).length;
@@ -29,7 +37,8 @@ export default function TasksPage() {
     details: TaskDetails,
   ) {
     const task = addTask(name, color, estimatedSpikes, details);
-    setSelectedTaskId(task.id);
+    // A new task takes Focus only when nothing has it, so adding never pulls you off your work.
+    if (focusTaskId === null) setFocus(task.id);
     setFormState({ mode: 'hidden' });
   }
 
@@ -52,10 +61,18 @@ export default function TasksPage() {
     setFormState({ mode: 'hidden' });
   }
 
-  function handleDone(task: Task) {
-    if (window.confirm(`Mark "${task.name}" as done? It will be hidden from the task list.`)) {
-      setTaskState(task.id, 'done');
+  function handleSetState(task: Task, state: TaskState) {
+    if (state === task.state) return;
+    if (
+      state === 'done' &&
+      !window.confirm(`Mark "${task.name}" as done? It will be hidden from the task list.`)
+    ) {
+      return;
     }
+    // Leaving Focus (to another task, or to any state but Done) offers a where-was-I note.
+    if (task.state === 'focus' && state !== 'done') setLeftFocusId(task.id);
+    else if (state === 'focus' && focusTaskId !== null) setLeftFocusId(focusTaskId);
+    setTaskState(task.id, state);
   }
 
   function handleDelete(task: Task) {
@@ -68,6 +85,7 @@ export default function TasksPage() {
     }
   }
 
+  const leftFocus = tasks.find((task) => task.id === leftFocusId);
   const isEditing = (id: string) => formState.mode === 'edit' && formState.task.id === id;
 
   return (
@@ -99,6 +117,26 @@ export default function TasksPage() {
         Show done tasks
       </label>
 
+      {exceedsSoftCap(tasks) && (
+        <p className={styles.softCap} role="note">
+          {countInPlay(tasks)} tasks are waiting on something or someone. That is a lot to hold in
+          mind: maybe check in on one, or let one go.
+        </p>
+      )}
+
+      {leftFocus && (
+        <WhereWasIPrompt
+          key={leftFocus.id}
+          taskName={leftFocus.name}
+          initial={leftFocus.whereWasI}
+          onSave={(note) => {
+            updateTask(leftFocus.id, { whereWasI: note || undefined });
+            setLeftFocusId(null);
+          }}
+          onSkip={() => setLeftFocusId(null)}
+        />
+      )}
+
       {formState.mode === 'add' && (
         <TaskForm
           onSubmit={handleAdd}
@@ -110,31 +148,41 @@ export default function TasksPage() {
         <p className={styles.empty}>No tasks yet. Add one to start tracking your work.</p>
       )}
 
-      <ul className={styles.list}>
-        {tasks.map((task) => (
-          <li key={task.id}>
-            {isEditing(task.id) ? (
-              <TaskForm
-                initial={task}
-                onSubmit={(name, color, estimatedSpikes, details) =>
-                  handleEdit(task, name, color, estimatedSpikes, details)
-                }
-                onCancel={() => setFormState({ mode: 'hidden' })}
-              />
-            ) : (
-              <TaskItem
-                task={task}
-                sessionCount={getSessionCount(task.id)}
-                selected={task.id === selectedTaskId}
-                onSelect={() => setSelectedTaskId(task.id)}
-                onEdit={() => setFormState({ mode: 'edit', task })}
-                onDone={() => handleDone(task)}
-                onDelete={() => handleDelete(task)}
-              />
-            )}
-          </li>
-        ))}
-      </ul>
+      {GROUP_ORDER.map((state) => {
+        const group = tasks.filter((task) => task.state === state);
+        if (group.length === 0) return null;
+        return (
+          <section key={state} className={styles.group} aria-labelledby={`group-${state}`}>
+            <h2 id={`group-${state}`} className={styles.groupTitle}>
+              {STATE_LABELS[state]} <span className={styles.groupCount}>{group.length}</span>
+            </h2>
+            <ul className={styles.list}>
+              {group.map((task) => (
+                <li key={task.id}>
+                  {isEditing(task.id) ? (
+                    <TaskForm
+                      initial={task}
+                      onSubmit={(name, color, estimatedSpikes, details) =>
+                        handleEdit(task, name, color, estimatedSpikes, details)
+                      }
+                      onCancel={() => setFormState({ mode: 'hidden' })}
+                    />
+                  ) : (
+                    <TaskItem
+                      task={task}
+                      sessionCount={getSessionCount(task.id)}
+                      showCode={settings.bridgePairingCode !== null}
+                      onSetState={(next) => handleSetState(task, next)}
+                      onEdit={() => setFormState({ mode: 'edit', task })}
+                      onDelete={() => handleDelete(task)}
+                    />
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
     </div>
   );
 }

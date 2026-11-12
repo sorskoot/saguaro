@@ -8,10 +8,12 @@ On the Timer page, windows at most 550px wide and 300px high show only the count
 centered and scaled to fit. The timer keeps running; enlarge either dimension beyond
 that breakpoint to restore navigation and controls.
 
-Tasks have a state (Open, Focus, Waiting, Asking, Ready or Done). On the Tasks page, mark a task
-as done with the checkmark button and enable **Show done tasks** to include done tasks in the list.
-Done tasks are labeled and can be edited or deleted, but cannot be selected for the timer.
-They remain hidden by default and in the timer's task selector.
+Tasks have a state (Open, Focus, Waiting, Asking, Ready or Done). The Tasks page groups tasks by
+state and each task has one button per state. Exactly one task is the Focus; focusing another moves
+the old one to Open and offers a skippable where-was-I note. A quiet note appears when more than 3
+tasks are Waiting, Asking or Ready; it never blocks anything. Enable **Show done tasks** to include
+done tasks, which can be reopened, edited or deleted. They remain hidden by default and in the
+timer's task selector.
 
 ## Data
 

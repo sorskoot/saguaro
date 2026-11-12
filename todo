@@ -25,8 +25,8 @@ ADHD / AI Driven Development:
     ✓ M2: Count-up Spike (`+m:ss`), End early / Take a break, silent overtime. @done(26-11-12 21:30)
     ✓ M2: Breaks as a rest screen with a single soft chime and silent overrun. @done(26-11-12 21:30)
     ✓ M2: Re-entry screen and Morning pick. @done(26-11-12 21:30)
-    ☐ Task states: Active / Waiting / Done, soft cap of 3 Active tasks.
-    ✓ Next action and "where was I" note per task (inputs; prompt on leaving Focus comes with the states UI). @done(26-11-12 21:30)
+    ✓ Task states UI: grouped by state, one Focus, one-tap changes, soft cap note. @done(26-11-12 23:30)
+    ✓ Next action and "where was I" note per task (inputs); where-was-I prompt on leaving Focus. @done(26-11-12 23:30)
     ☐ Parking lot for intrusive thoughts.
     ☐ Break-time review of Waiting tasks.
     ☐ Switch counter per sprint.
