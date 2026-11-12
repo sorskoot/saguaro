@@ -85,6 +85,21 @@
   min-width: 0;
 }
 
+.summary {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.code {
+  font-family: ui-monospace, monospace;
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
 /* ─── Session count ──────────────────────────────────────── */
 .sessionCount {
   font-size: var(--font-size-sm);
@@ -184,6 +199,7 @@
   }
 
   .name,
+  .summary,
   .description {
     white-space: normal;
     overflow-wrap: anywhere;

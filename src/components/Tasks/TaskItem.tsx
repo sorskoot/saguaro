@@ -22,6 +22,8 @@ const STATE_ORDER: readonly TaskState[] = ['focus', 'open', 'waiting', 'asking',
 interface TaskItemProps {
   task: Task;
   sessionCount: number;
+  /** Show the task's short code (only once an agent bridge is paired). */
+  showCode?: boolean;
   onSetState: (state: TaskState) => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -30,6 +32,7 @@ interface TaskItemProps {
 export default function TaskItem({
   task,
   sessionCount,
+  showCode = false,
   onSetState,
   onEdit,
   onDelete,
@@ -49,7 +52,13 @@ export default function TaskItem({
         <span className={styles.name} title={task.name}>
           {task.name}
           {isDone && <span className={styles.doneLabel}> (Done)</span>}
+          {showCode && task.code && <span className={styles.code}> #{task.code}</span>}
         </span>
+        {task.summary && (
+          <span className={styles.summary} title={task.summary}>
+            {task.summary}
+          </span>
+        )}
         {task.nextAction && (
           <span className={styles.description} title={task.nextAction}>
             Next: {task.nextAction}

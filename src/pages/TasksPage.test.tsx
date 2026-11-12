@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import TasksPage from './TasksPage';
+import { DEFAULT_SETTINGS } from '../types';
 import type { Task } from '../types';
 import { getDataStore } from '../services/db/DataStore';
 
@@ -245,5 +246,31 @@ describe('TasksPage where-was-I prompt', () => {
     expect(screen.queryByRole('form', { name: 'Where was I' })).not.toBeInTheDocument();
     fireEvent.click(within(rowOf('Task a')).getByRole('button', { name: 'Focus' }));
     expect(screen.queryByRole('form', { name: 'Where was I' })).not.toBeInTheDocument();
+  });
+});
+
+describe('TasksPage summary and code', () => {
+  const task: Task = {
+    id: 'a', name: 'Fix login', color: '#ff0000', createdAt: '', state: 'ready',
+    summary: 'Tests pass, ready for review', code: 'k3',
+  };
+
+  it('shows the summary under the task name', () => {
+    getDataStore().tasks.replaceAll([task]);
+    render(<TasksPage />);
+    expect(screen.getByText('Tests pass, ready for review')).toBeInTheDocument();
+  });
+
+  it('hides the task code until a bridge is paired', () => {
+    getDataStore().tasks.replaceAll([task]);
+    render(<TasksPage />);
+    expect(screen.queryByText('#k3')).not.toBeInTheDocument();
+  });
+
+  it('shows the task code once a bridge is paired', () => {
+    getDataStore().tasks.replaceAll([task]);
+    getDataStore().settings.setValue({ ...DEFAULT_SETTINGS, bridgePairingCode: 'abc123' });
+    render(<TasksPage />);
+    expect(screen.getByText('#k3')).toBeInTheDocument();
   });
 });

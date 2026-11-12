@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTasks } from '../hooks/useTasks';
 import { useSessions } from '../hooks/useSessions';
+import { useSettings } from '../hooks/useSettings';
 import { TaskForm, TaskItem, WhereWasIPrompt } from '../components/Tasks';
 import { STATE_LABELS } from '../components/Tasks/TaskItem';
 import { countInPlay, exceedsSoftCap } from '../utils/softCap';
@@ -20,6 +21,7 @@ export default function TasksPage() {
   const { tasks, focusTaskId, setFocus, addTask, updateTask, setTaskState, deleteTask } =
     useTasks(showDone);
   const { sessions } = useSessions();
+  const { settings } = useSettings();
   const [formState, setFormState] = useState<FormState>({ mode: 'hidden' });
   // The task you just left Focus on, while the where-was-I prompt is open.
   const [leftFocusId, setLeftFocusId] = useState<string | null>(null);
@@ -169,6 +171,7 @@ export default function TasksPage() {
                     <TaskItem
                       task={task}
                       sessionCount={getSessionCount(task.id)}
+                      showCode={settings.bridgePairingCode !== null}
                       onSetState={(next) => handleSetState(task, next)}
                       onEdit={() => setFormState({ mode: 'edit', task })}
                       onDelete={() => handleDelete(task)}
