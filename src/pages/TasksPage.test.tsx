@@ -97,14 +97,14 @@ describe('TasksPage done tasks', () => {
   });
 
   it('does not allow selecting or marking done again an done task', () => {
-    localStorage.setItem('saguaro:selectedTaskId', JSON.stringify('active'));
+    getDataStore().tasks.save({ ...tasks[0], state: 'focus' });
     render(<TasksPage />);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Show done tasks' }));
     const row = screen.getByText('Done task').closest('li')!;
     expect(within(row).queryByTitle('Mark task as done')).not.toBeInTheDocument();
     fireEvent.click(screen.getByText('Done task'));
     fireEvent.keyDown(screen.getByText('Done task').parentElement!, { key: 'Enter' });
-    expect(JSON.parse(localStorage.getItem('saguaro:selectedTaskId')!)).toBe('active');
+    expect(getDataStore().tasks.findById('done')?.state).toBe('done');
     fireEvent.click(screen.getByRole('button', { name: /Active task/ }));
     expect(screen.getByRole('button', { name: /Active task/ })).toHaveAttribute('aria-pressed', 'true');
   });

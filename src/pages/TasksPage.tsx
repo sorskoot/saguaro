@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTasks } from '../hooks/useTasks';
 import { useSessions } from '../hooks/useSessions';
-import { useSelectedTask } from '../hooks/useSelectedTask';
 import { TaskForm, TaskItem } from '../components/Tasks';
 import type { Task, TaskDetails } from '../types';
 import styles from './TasksPage.module.css';
@@ -13,9 +12,9 @@ type FormState =
 
 export default function TasksPage() {
   const [showDone, setShowDone] = useState(false);
-  const { tasks, addTask, updateTask, setTaskState, deleteTask } = useTasks(showDone);
+  const { tasks, focusTaskId, setFocus, addTask, updateTask, setTaskState, deleteTask } =
+    useTasks(showDone);
   const { sessions } = useSessions();
-  const { selectedTaskId, setSelectedTaskId } = useSelectedTask();
   const [formState, setFormState] = useState<FormState>({ mode: 'hidden' });
 
   function getSessionCount(taskId: string): number {
@@ -29,7 +28,8 @@ export default function TasksPage() {
     details: TaskDetails,
   ) {
     const task = addTask(name, color, estimatedSpikes, details);
-    setSelectedTaskId(task.id);
+    // A new task takes Focus only when nothing has it, so adding never pulls you off your work.
+    if (focusTaskId === null) setFocus(task.id);
     setFormState({ mode: 'hidden' });
   }
 
@@ -125,8 +125,8 @@ export default function TasksPage() {
               <TaskItem
                 task={task}
                 sessionCount={getSessionCount(task.id)}
-                selected={task.id === selectedTaskId}
-                onSelect={() => setSelectedTaskId(task.id)}
+                selected={task.id === focusTaskId}
+                onSelect={() => setFocus(task.id)}
                 onEdit={() => setFormState({ mode: 'edit', task })}
                 onDone={() => handleDone(task)}
                 onDelete={() => handleDelete(task)}

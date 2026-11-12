@@ -54,20 +54,20 @@ describe('MorningPick', () => {
     fireEvent.click(screen.getByRole('button', { name: /Write docs/ }));
 
     expect(screen.getByText('The timer')).toBeInTheDocument();
-    expect(getStorageService().get('saguaro:selectedTaskId')).toBe('b');
+    expect(getDataStore().tasks.findById('b')?.state).toBe('focus');
     expect(getStorageService().get(MORNING_PICK_STORAGE_KEY)).toBe('2026-11-12');
-    expect(new EventLogRepository(getDataStore().events).findAll()).toMatchObject([
+    expect(new EventLogRepository(getDataStore().events).findByType('focus-switch')).toMatchObject([
       { type: 'focus-switch', fromTaskId: null, toTaskId: 'b' },
     ]);
   });
 
-  it('can be skipped without changing the selected task', () => {
-    getStorageService().set('saguaro:selectedTaskId', 'a');
+  it('can be skipped without changing the focus task', () => {
+    getDataStore().tasks.save(task('a', { state: 'focus' }));
     renderGate();
     fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
 
     expect(screen.getByText('The timer')).toBeInTheDocument();
-    expect(getStorageService().get('saguaro:selectedTaskId')).toBe('a');
+    expect(getDataStore().tasks.findById('a')?.state).toBe('focus');
     expect(getStorageService().get(MORNING_PICK_STORAGE_KEY)).toBe('2026-11-12');
   });
 
