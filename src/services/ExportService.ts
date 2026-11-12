@@ -1,20 +1,19 @@
 import type { IExportService } from './interfaces/IExportService';
-import type { IStorageService } from './interfaces/IStorageService';
+import type { DataStore } from './db/DataStore';
 import type { AppData, Session, Task, Settings } from '../types';
 import { DEFAULT_SETTINGS } from '../types';
 
 const APP_VERSION = '1.0';
-const TASKS_KEY = 'saguaro_tasks';
 
 export class ExportService implements IExportService {
-  constructor(private readonly storage: IStorageService) {}
+  constructor(private readonly data: DataStore) {}
 
   exportData(): AppData {
     return {
       version: APP_VERSION,
-      settings: this.storage.get<Settings>('saguaro_settings') ?? { ...DEFAULT_SETTINGS },
-      tasks: this.storage.get<Task[]>(TASKS_KEY) ?? [],
-      sessions: this.storage.get<Session[]>('saguaro_sessions') ?? [],
+      settings: this.data.settings.get() ?? { ...DEFAULT_SETTINGS },
+      tasks: this.data.tasks.findAll(),
+      sessions: this.data.sessions.findAll(),
       exportedAt: new Date().toISOString(),
     };
   }
@@ -35,9 +34,9 @@ export class ExportService implements IExportService {
       sessions: obj.sessions as Session[],
       exportedAt: (obj.exportedAt as string) ?? new Date().toISOString(),
     };
-    this.storage.set('saguaro_settings', appData.settings);
-    this.storage.set(TASKS_KEY, appData.tasks);
-    this.storage.set('saguaro_sessions', appData.sessions);
+    this.data.settings.set(appData.settings);
+    this.data.tasks.replaceAll(appData.tasks);
+    this.data.sessions.replaceAll(appData.sessions);
     return appData;
   }
 }

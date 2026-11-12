@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { useTasks } from './useTasks';
+import { getDataStore } from '../services/db/DataStore';
 
 beforeEach(() => {
   localStorage.clear();
@@ -61,9 +62,7 @@ describe('useTasks', () => {
     });
 
     expect(result.current.tasks).toHaveLength(0);
-    const stored: Array<{ id: string; state: string }> = JSON.parse(
-      localStorage.getItem('saguaro_tasks')!,
-    );
+    const stored = getDataStore().tasks.findAll();
     expect(stored).toHaveLength(1);
     expect(stored[0].state).toBe('done');
   });
@@ -101,7 +100,7 @@ describe('useTasks', () => {
     });
 
     expect(result.current.tasks).toHaveLength(0);
-    const stored: unknown[] = JSON.parse(localStorage.getItem('saguaro_tasks')!);
+    const stored = getDataStore().tasks.findAll();
     expect(stored).toHaveLength(0);
   });
 

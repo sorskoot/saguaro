@@ -1,40 +1,23 @@
 import type { IRepository } from './interfaces/IRepository';
-import type { IStorageService } from './interfaces/IStorageService';
+import type { CollectionStore } from './db/CollectionStore';
 import type { Session } from '../types';
 
-const SESSIONS_KEY = 'saguaro_sessions';
-
 export class SessionRepository implements IRepository<Session> {
-  constructor(private readonly storage: IStorageService) {}
-
-  private load(): Session[] {
-    return this.storage.get<Session[]>(SESSIONS_KEY) ?? [];
-  }
-
-  private persist(sessions: Session[]): void {
-    this.storage.set(SESSIONS_KEY, sessions);
-  }
+  constructor(private readonly store: CollectionStore<Session>) {}
 
   findAll(): Session[] {
-    return this.load();
+    return this.store.findAll();
   }
 
   findById(id: string): Session | undefined {
-    return this.load().find((s) => s.id === id);
+    return this.store.findById(id);
   }
 
   save(session: Session): void {
-    const sessions = this.load();
-    const index = sessions.findIndex((s) => s.id === session.id);
-    if (index >= 0) {
-      sessions[index] = session;
-    } else {
-      sessions.push(session);
-    }
-    this.persist(sessions);
+    this.store.save(session);
   }
 
   delete(id: string): void {
-    this.persist(this.load().filter((s) => s.id !== id));
+    this.store.delete(id);
   }
 }

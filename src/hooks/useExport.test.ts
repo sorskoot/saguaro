@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useExport } from './useExport';
 import { DEFAULT_SETTINGS, type AppData } from '../types';
+import { getDataStore } from '../services/db/DataStore';
 
 // URL.createObjectURL / revokeObjectURL are not implemented in jsdom.
 // Define them once at the module level; individual tests can inspect the spies.
@@ -77,7 +78,7 @@ describe('useExport', () => {
   });
 
   describe('importFromFile()', () => {
-    it('reads valid JSON and writes data to localStorage, then calls onSuccess', async () => {
+    it('reads valid JSON and writes data to the data store, then calls onSuccess', async () => {
       const onSuccess = vi.fn();
       const onError = vi.fn();
       const { result } = renderHook(() => useExport({ onSuccess, onError }));
@@ -92,9 +93,7 @@ describe('useExport', () => {
       expect(onSuccess).toHaveBeenCalledTimes(1);
       expect(onError).not.toHaveBeenCalled();
 
-      // ExportService.importData writes individual keys to localStorage.
-      const stored = JSON.parse(localStorage.getItem('saguaro_settings')!);
-      expect(stored.spikeMinimum).toBe(30);
+      expect(getDataStore().settings.get()?.spikeMinimum).toBe(30);
     });
 
     it('calls onError when the file contains invalid JSON', async () => {

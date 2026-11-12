@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { TaskRepository } from '../services/TaskRepository';
-import { getStorageService } from '../services/StorageService';
+import { getDataStore } from '../services/db/DataStore';
 import { generateId } from '../utils/id';
 import type { Task, TaskDetails, TaskState } from '../types';
 
@@ -52,7 +52,7 @@ export interface UseTasksResult {
 export function useTasks(includeDone = false): UseTasksResult {
     const repoRef = useRef<TaskRepository | null>(null);
     if (repoRef.current === null) {
-        repoRef.current = new TaskRepository(getStorageService());
+        repoRef.current = new TaskRepository(getDataStore().tasks);
     }
     const repo = repoRef.current;
 

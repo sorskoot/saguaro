@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { useSessions } from './useSessions';
+import { getDataStore } from '../services/db/DataStore';
 
 beforeEach(() => {
   localStorage.clear();
@@ -79,7 +80,7 @@ describe('useSessions', () => {
 
     expect(result.current.sessions).toHaveLength(0);
 
-    const stored: unknown[] = JSON.parse(localStorage.getItem('saguaro_sessions')!);
+    const stored = getDataStore().sessions.findAll();
     expect(stored).toHaveLength(0);
   });
 });

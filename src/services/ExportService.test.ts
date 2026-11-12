@@ -1,25 +1,6 @@
 import { ExportService } from './ExportService';
 import { DEFAULT_SETTINGS, type AppData, type Session, type Task, type Settings } from '../types';
-import type { IStorageService } from './interfaces/IStorageService';
-
-function createMockStorage() {
-  const store: Record<string, string> = {};
-  return {
-    get: <T>(key: string): T | null => {
-      const value = store[key];
-      return value !== undefined ? (JSON.parse(value) as T) : null;
-    },
-    set: <T>(key: string, value: T) => {
-      store[key] = JSON.stringify(value);
-    },
-    remove: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      Object.keys(store).forEach((key) => delete store[key]);
-    },
-  } satisfies IStorageService;
-}
+import { DataStore } from './db/DataStore';
 
 const sampleTask: Task = {
   id: 'task-1',
@@ -45,12 +26,12 @@ const sampleSettings: Settings = {
 };
 
 describe('ExportService', () => {
-  let storage: IStorageService;
+  let data: DataStore;
   let service: ExportService;
 
   beforeEach(() => {
-    storage = createMockStorage();
-    service = new ExportService(storage);
+    data = new DataStore();
+    service = new ExportService(data);
   });
 
   describe('exportData()', () => {
@@ -65,19 +46,19 @@ describe('ExportService', () => {
     });
 
     it('includes stored settings', () => {
-      storage.set('saguaro_settings', sampleSettings);
+      data.settings.set(sampleSettings);
 
       expect(service.exportData().settings).toEqual(sampleSettings);
     });
 
-    it('includes tasks stored under saguaro_tasks', () => {
-      storage.set('saguaro_tasks', [sampleTask]);
+    it('includes stored tasks', () => {
+      data.tasks.save(sampleTask);
 
       expect(service.exportData().tasks).toEqual([sampleTask]);
     });
 
     it('exports sessions with task associations', () => {
-      storage.set('saguaro_sessions', [sampleSession]);
+      data.sessions.save(sampleSession);
 
       expect(service.exportData().sessions).toEqual([sampleSession]);
     });
@@ -98,12 +79,12 @@ describe('ExportService', () => {
       exportedAt: '2024-01-01T12:00:00.000Z',
     };
 
-    it('writes settings, tasks, and sessions to storage', () => {
+    it('writes settings, tasks, and sessions to the data store', () => {
       service.importData(validPayload);
 
-      expect(storage.get('saguaro_settings')).toEqual(sampleSettings);
-      expect(storage.get('saguaro_tasks')).toEqual([sampleTask]);
-      expect(storage.get('saguaro_sessions')).toEqual([sampleSession]);
+      expect(data.settings.get()).toEqual(sampleSettings);
+      expect(data.tasks.findAll()).toEqual([sampleTask]);
+      expect(data.sessions.findAll()).toEqual([sampleSession]);
     });
 
     it('returns the imported AppData', () => {

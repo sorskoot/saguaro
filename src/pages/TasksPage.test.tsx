@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import TasksPage from './TasksPage';
 import type { Task } from '../types';
+import { getDataStore } from '../services/db/DataStore';
 
 const tasks: Task[] = [
   { id: 'active', name: 'Active task', color: '#ff0000', estimatedSpikes: 2, createdAt: '', state: 'open' },
@@ -9,7 +10,7 @@ const tasks: Task[] = [
 
 beforeEach(() => {
   localStorage.clear();
-  localStorage.setItem('saguaro_tasks', JSON.stringify(tasks));
+  getDataStore().tasks.replaceAll(tasks);
 });
 
 afterEach(() => {
@@ -18,12 +19,9 @@ afterEach(() => {
 
 describe('TasksPage description and link', () => {
   it('shows a task description and a safe external link', () => {
-    localStorage.setItem(
-      'saguaro_tasks',
-      JSON.stringify([
-        { ...tasks[0], description: 'Fix the crash', link: 'https://github.com/o/r/issues/7' },
-      ]),
-    );
+    getDataStore().tasks.replaceAll([
+      { ...tasks[0], description: 'Fix the crash', link: 'https://github.com/o/r/issues/7' },
+    ]);
     render(<TasksPage />);
 
     expect(screen.getByText('Fix the crash')).toBeInTheDocument();
@@ -34,10 +32,7 @@ describe('TasksPage description and link', () => {
   });
 
   it('does not render a link for non-http(s) values', () => {
-    localStorage.setItem(
-      'saguaro_tasks',
-      JSON.stringify([{ ...tasks[0], link: 'javascript:alert(1)' }]),
-    );
+    getDataStore().tasks.replaceAll([{ ...tasks[0], link: 'javascript:alert(1)' }]);
     render(<TasksPage />);
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });
@@ -53,7 +48,7 @@ describe('TasksPage description and link', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    const saved = JSON.parse(localStorage.getItem('saguaro_tasks')!);
+    const saved = getDataStore().tasks.findAll();
     expect(saved[0]).toMatchObject({ description: 'New notes', link: 'https://example.com/1' });
   });
 });
@@ -73,11 +68,11 @@ describe('TasksPage done tasks', () => {
 
     fireEvent.click(toggle);
     expect(screen.queryByText('Done task')).not.toBeInTheDocument();
-    expect(JSON.parse(localStorage.getItem('saguaro_tasks')!)).toEqual(tasks);
+    expect(getDataStore().tasks.findAll()).toEqual(tasks);
   });
 
   it('shows done-only tasks instead of the empty state when enabled', () => {
-    localStorage.setItem('saguaro_tasks', JSON.stringify([tasks[1]]));
+    getDataStore().tasks.replaceAll([tasks[1]]);
     render(<TasksPage />);
     expect(screen.getByText(/No tasks yet/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Show done tasks' }));
@@ -116,6 +111,6 @@ describe('TasksPage done tasks', () => {
     const row = screen.getByText('Done task').closest('li')!;
     fireEvent.click(within(row).getByTitle('Delete task'));
     expect(screen.queryByText('Done task')).not.toBeInTheDocument();
-    expect(JSON.parse(localStorage.getItem('saguaro_tasks')!)).toEqual([tasks[0]]);
+    expect(getDataStore().tasks.findAll()).toEqual([tasks[0]]);
   });
 });

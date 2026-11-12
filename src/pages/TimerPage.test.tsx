@@ -3,6 +3,7 @@ import { useTimer } from '../hooks/useTimer';
 import type { UseTimerOptions } from '../hooks/useTimer';
 import type { Session, SessionType, Task } from '../types';
 import TimerPage from './TimerPage';
+import { getDataStore } from '../services/db/DataStore';
 
 vi.mock('../hooks/useTimer');
 
@@ -26,16 +27,16 @@ function expectDots(total: number, filled: number, scope = 'task') {
 
 beforeEach(() => {
   localStorage.clear();
-  localStorage.setItem('saguaro_tasks', JSON.stringify(tasks));
+  getDataStore().tasks.replaceAll(tasks);
   localStorage.setItem('saguaro:selectedTaskId', JSON.stringify('first'));
-  localStorage.setItem('saguaro_sessions', JSON.stringify([
+  getDataStore().sessions.replaceAll([
     session('one', 'first'),
     session('break', 'first', 'short-break'),
     session('long-break', 'first', 'long-break'),
     session('unfinished', 'first', 'spike', false),
     session('other', 'second'),
     session('unassigned', null),
-  ]));
+  ]);
   vi.mocked(useTimer).mockImplementation((options) => {
     onComplete = options.onComplete;
     return {
@@ -60,9 +61,9 @@ describe('TimerPage Spike circles', () => {
   });
 
   it('adds extra circles when completed sessions exceed the estimate', () => {
-    localStorage.setItem('saguaro_sessions', JSON.stringify(
+    getDataStore().sessions.replaceAll(
       Array.from({ length: 5 }, (_, i) => session(String(i), 'first')),
-    ));
+    );
     render(<TimerPage />);
     const dots = screen.getByRole('img', { name: '5 of 3 task Spikes completed, 2 over estimate' });
     expect(dots.children).toHaveLength(5);
@@ -75,7 +76,7 @@ describe('TimerPage Spike circles', () => {
   });
 
   it('shows empty circles when the task has no completed sessions', () => {
-    localStorage.removeItem('saguaro_sessions');
+    getDataStore().sessions.clear();
     render(<TimerPage />);
     expectDots(3, 0);
   });

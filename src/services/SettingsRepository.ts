@@ -1,17 +1,16 @@
-import type { IStorageService } from './interfaces/IStorageService';
+import type { ValueStore } from './db/CollectionStore';
 import { DEFAULT_SETTINGS, type Settings } from '../types';
 
-const SETTINGS_KEY = 'saguaro_settings';
-
 export class SettingsRepository {
-  constructor(private readonly storage: IStorageService) {}
+  constructor(private readonly store: ValueStore<Settings>) {}
 
+  /** Stored settings merged over the defaults, so new settings always have a value. */
   load(): Settings {
-    const saved = this.storage.get<Settings>(SETTINGS_KEY);
+    const saved = this.store.get();
     return saved ? { ...DEFAULT_SETTINGS, ...saved } : { ...DEFAULT_SETTINGS };
   }
 
   save(settings: Settings): void {
-    this.storage.set(SETTINGS_KEY, settings);
+    this.store.set(settings);
   }
 }

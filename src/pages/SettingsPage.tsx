@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import type { ChangeEvent } from 'react';
 import { useSettings } from '../hooks/useSettings';
 import { useExport } from '../hooks/useExport';
+import { getDataStore } from '../services/db/DataStore';
 import { DurationField, ToggleField } from '../components/Settings';
 import styles from './SettingsPage.module.css';
 
@@ -22,12 +23,13 @@ export default function SettingsPage() {
     e.target.value = '';
   }
 
-  function handleClearAll() {
+  async function handleClearAll() {
     if (
       window.confirm(
-        'Clear ALL data? This will permanently delete all sessions and tasks. This cannot be undone.',
+        'Clear ALL data? This will permanently delete all sessions, tasks and the event log. This cannot be undone.',
       )
     ) {
+      await getDataStore().clearAll();
       localStorage.clear();
       window.location.reload();
     }
@@ -137,7 +139,7 @@ export default function SettingsPage() {
               Permanently delete all sessions, tasks, and settings. This cannot be undone.
             </p>
           </div>
-          <button className={styles.dangerBtn} type="button" onClick={handleClearAll}>
+          <button className={styles.dangerBtn} type="button" onClick={() => void handleClearAll()}>
             Clear all
           </button>
         </div>

@@ -1,6 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { ExportService } from '../services/ExportService';
-import { getStorageService } from '../services/StorageService';
+import { getDataStore } from '../services/db/DataStore';
 
 export interface UseExportOptions {
     /** Called after a successful import operation. */
@@ -49,7 +49,7 @@ export function useExport({
 }: UseExportOptions = {}): UseExportResult {
     const serviceRef = useRef<ExportService | null>(null);
     if (serviceRef.current === null) {
-        serviceRef.current = new ExportService(getStorageService());
+        serviceRef.current = new ExportService(getDataStore());
     }
     const service = serviceRef.current;
 

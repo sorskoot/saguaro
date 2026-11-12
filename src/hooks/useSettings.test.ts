@@ -1,12 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useSettings } from './useSettings';
 import { DEFAULT_SETTINGS } from '../types';
-
-// storageService wraps localStorage directly; jsdom provides it.
-// Clearing localStorage before each test gives every renderHook a clean slate.
-beforeEach(() => {
-  localStorage.clear();
-});
+import { getDataStore } from '../services/db/DataStore';
 
 describe('useSettings', () => {
   it('loads DEFAULT_SETTINGS initially', () => {
@@ -27,17 +22,13 @@ describe('useSettings', () => {
     expect(result.current.settings.shortBreakDuration).toBe(DEFAULT_SETTINGS.shortBreakDuration);
     expect(result.current.settings.breakEndChime).toBe(DEFAULT_SETTINGS.breakEndChime);
 
-    // Value was persisted to localStorage by the repository.
-    const stored = JSON.parse(localStorage.getItem('saguaro_settings')!);
-    expect(stored.spikeMinimum).toBe(30);
+    // Value was handed to the data store by the repository.
+    expect(getDataStore().settings.get()?.spikeMinimum).toBe(30);
   });
 
   it('re-loading the hook reads persisted settings from storage', () => {
-    // Pre-populate localStorage as if a previous session had saved settings.
-    localStorage.setItem(
-      'saguaro_settings',
-      JSON.stringify({ ...DEFAULT_SETTINGS, spikeMinimum: 45 }),
-    );
+    // Pre-populate the store as if a previous session had saved settings.
+    getDataStore().settings.set({ ...DEFAULT_SETTINGS, spikeMinimum: 45 });
 
     const { result } = renderHook(() => useSettings());
     expect(result.current.settings.spikeMinimum).toBe(45);

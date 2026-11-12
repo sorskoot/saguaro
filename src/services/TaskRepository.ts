@@ -1,62 +1,23 @@
 import type { IRepository } from './interfaces/IRepository';
-import type { IStorageService } from './interfaces/IStorageService';
+import type { CollectionStore } from './db/CollectionStore';
 import type { Task } from '../types';
 
-const TASKS_KEY = 'saguaro_tasks';
-
 export class TaskRepository implements IRepository<Task> {
-  constructor(private readonly storage: IStorageService) {}
-
-  private normalize(tasks: Task[]): Task[] {
-    return tasks.map((task) => {
-      const { estimatedSpikes, ...rest } = task;
-      return {
-        ...rest,
-        state: task.state ?? 'open',
-        ...(Number.isInteger(estimatedSpikes) && (estimatedSpikes as number) > 0
-          ? { estimatedSpikes }
-          : {}),
-      };
-    });
-  }
-
-  private load(): Task[] {
-    const tasks = this.storage.get<Task[]>(TASKS_KEY);
-    if (tasks !== null) {
-      const normalizedTasks = this.normalize(tasks);
-      if (JSON.stringify(normalizedTasks) !== JSON.stringify(tasks)) {
-        this.persist(normalizedTasks);
-      }
-      return normalizedTasks;
-    }
-
-    return [];
-  }
-
-  private persist(tasks: Task[]): void {
-    this.storage.set(TASKS_KEY, tasks);
-  }
+  constructor(private readonly store: CollectionStore<Task>) {}
 
   findAll(): Task[] {
-    return this.load();
+    return this.store.findAll();
   }
 
   findById(id: string): Task | undefined {
-    return this.load().find((task) => task.id === id);
+    return this.store.findById(id);
   }
 
   save(task: Task): void {
-    const tasks = this.load();
-    const index = tasks.findIndex((item) => item.id === task.id);
-    if (index >= 0) {
-      tasks[index] = task;
-    } else {
-      tasks.push(task);
-    }
-    this.persist(tasks);
+    this.store.save(task);
   }
 
   delete(id: string): void {
-    this.persist(this.load().filter((task) => task.id !== id));
+    this.store.delete(id);
   }
 }

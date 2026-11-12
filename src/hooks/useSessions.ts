@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { SessionRepository } from '../services/SessionRepository';
-import { getStorageService } from '../services/StorageService';
+import { getDataStore } from '../services/db/DataStore';
 import { generateId } from '../utils/id';
 import type { Session, SessionType } from '../types';
 
@@ -49,7 +49,7 @@ export interface UseSessionsResult {
 export function useSessions(): UseSessionsResult {
     const repoRef = useRef<SessionRepository | null>(null);
     if (repoRef.current === null) {
-        repoRef.current = new SessionRepository(getStorageService());
+        repoRef.current = new SessionRepository(getDataStore().sessions);
     }
     const repo = repoRef.current;
 
