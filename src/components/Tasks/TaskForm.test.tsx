@@ -89,4 +89,31 @@ describe('TaskForm', () => {
 
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it('submits a trimmed next action and where-was-I note', () => {
+    const onSubmit = vi.fn();
+    const { container } = render(<TaskForm onSubmit={onSubmit} />);
+
+    fireEvent.change(screen.getByLabelText('Task name'), { target: { value: 'Fix bug' } });
+    fireEvent.change(screen.getByLabelText('Next action (optional)'), {
+      target: { value: '  Reproduce with the failing test ' },
+    });
+    fireEvent.change(screen.getByLabelText('Where was I (optional)'), {
+      target: { value: ' Stuck on the parser ' },
+    });
+    fireEvent.submit(container.querySelector('form')!);
+
+    expect(onSubmit).toHaveBeenCalledWith('Fix bug', '#8c8442', undefined, {
+      description: undefined,
+      link: undefined,
+      nextAction: 'Reproduce with the failing test',
+      whereWasI: 'Stuck on the parser',
+    });
+  });
+
+  it('prefills the notes when editing', () => {
+    render(<TaskForm initial={{ name: 'Fix bug', nextAction: 'Run it', whereWasI: 'Halfway' }} onSubmit={vi.fn()} />);
+    expect(screen.getByLabelText('Next action (optional)')).toHaveValue('Run it');
+    expect(screen.getByLabelText('Where was I (optional)')).toHaveValue('Halfway');
+  });
 });

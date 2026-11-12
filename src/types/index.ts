@@ -65,6 +65,8 @@ export interface Task {
 export interface TaskDetails {
   description?: string;
   link?: string;
+  nextAction?: string;
+  whereWasI?: string;
 }
 
 export type SessionType = 'spike' | 'short-break' | 'long-break';

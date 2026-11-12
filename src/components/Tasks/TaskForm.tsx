@@ -24,6 +24,8 @@ export default function TaskForm({ initial, onSubmit, onCancel }: TaskFormProps)
   );
   const [description, setDescription] = useState(initial?.description ?? '');
   const [link, setLink] = useState(initial?.link ?? '');
+  const [nextAction, setNextAction] = useState(initial?.nextAction ?? '');
+  const [whereWasI, setWhereWasI] = useState(initial?.whereWasI ?? '');
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -33,6 +35,8 @@ export default function TaskForm({ initial, onSubmit, onCancel }: TaskFormProps)
     onSubmit(trimmed, color, estimatedSpikes === '' ? undefined : Number(estimatedSpikes), {
       description: description.trim() || undefined,
       link: link.trim() || undefined,
+      nextAction: nextAction.trim() || undefined,
+      whereWasI: whereWasI.trim() || undefined,
     });
   }
 
@@ -68,6 +72,36 @@ export default function TaskForm({ initial, onSubmit, onCancel }: TaskFormProps)
           placeholder="Optional"
           value={estimatedSpikes}
           onChange={(e) => setEstimatedSpikes(e.target.value)}
+        />
+      </div>
+
+      <div className={styles.row}>
+        <label className={styles.label} htmlFor="task-next-action">
+          Next action (optional)
+        </label>
+        <input
+          id="task-next-action"
+          className={styles.input}
+          type="text"
+          value={nextAction}
+          onChange={(e) => setNextAction(e.target.value)}
+          placeholder="The very next physical step"
+          maxLength={200}
+        />
+      </div>
+
+      <div className={styles.row}>
+        <label className={styles.label} htmlFor="task-where-was-i">
+          Where was I (optional)
+        </label>
+        <textarea
+          id="task-where-was-i"
+          className={`${styles.input} ${styles.textarea}`}
+          value={whereWasI}
+          onChange={(e) => setWhereWasI(e.target.value)}
+          placeholder="A note for when you come back to this"
+          rows={2}
+          maxLength={500}
         />
       </div>
 
