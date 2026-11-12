@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { DEFAULT_TASK_COLOR } from '../../types';
 import type { Task, TaskDetails } from '../../types';
 import styles from './TaskForm.module.css';
 
@@ -14,7 +15,7 @@ interface TaskFormProps {
   onCancel?: () => void;
 }
 
-const DEFAULT_COLOR = '#8c8442';
+const DEFAULT_COLOR = DEFAULT_TASK_COLOR;
 
 export default function TaskForm({ initial, onSubmit, onCancel }: TaskFormProps) {
   const [name, setName] = useState(initial?.name ?? '');

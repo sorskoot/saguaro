@@ -218,3 +218,83 @@ describe('TimerPage rest screen', () => {
     expect(screen.queryByText('First task')).toBeNull();
   });
 });
+
+describe('TimerPage Re-entry', () => {
+  const reentry = (overrides: Partial<ReturnType<typeof useTimer>> = {}) =>
+    timerResult({ phase: 'reentry', mode: 'short-break', secondsLeft: 0, totalSeconds: 300, ...overrides });
+
+  beforeEach(() => {
+    getDataStore().parkingLot.replaceAll([
+      { id: 'p1', text: 'Reply to Sam', createdAt: '2026-11-12T09:00:00Z', sessionId: null },
+      { id: 'p2', text: 'Look up flights', createdAt: '2026-11-12T09:05:00Z', sessionId: null },
+    ]);
+    getDataStore().tasks.replaceAll([
+      { ...tasks[0], nextAction: 'Write the test', whereWasI: 'In the parser' },
+      { ...tasks[1], state: 'ready', summary: 'Agent finished the refactor' },
+    ]);
+  });
+
+  it('replaces the timer with Re-entry once the break is up', () => {
+    vi.mocked(useTimer).mockImplementation(() => reentry());
+    render(<TimerPage />);
+    expect(screen.getByRole('region', { name: 'Re-entry' })).toBeInTheDocument();
+    expect(screen.getByText('Agent finished the refactor')).toBeInTheDocument();
+    expect(screen.getByText('Write the test')).toBeInTheDocument();
+    expect(screen.getByText('In the parser')).toBeInTheDocument();
+    expect(screen.getByText('Reply to Sam')).toBeInTheDocument();
+  });
+
+  it('starts the next Spike from the Start button', () => {
+    const start = vi.fn();
+    vi.mocked(useTimer).mockImplementation(() => reentry({ start }));
+    render(<TimerPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    expect(start).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves Re-entry with Not now', () => {
+    const dismissReentry = vi.fn();
+    vi.mocked(useTimer).mockImplementation(() => reentry({ dismissReentry }));
+    render(<TimerPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Not now' }));
+    expect(dismissReentry).toHaveBeenCalledTimes(1);
+  });
+
+  it('promotes a parking-lot item to a task and logs it', () => {
+    vi.mocked(useTimer).mockImplementation(() => reentry());
+    render(<TimerPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Make task: Reply to Sam' }));
+
+    expect(screen.queryByText('Reply to Sam')).toBeNull();
+    const created = getDataStore().tasks.findAll().find((t) => t.name === 'Reply to Sam');
+    expect(created).toMatchObject({ state: 'open' });
+    expect(getDataStore().parkingLot.findById('p1')).toMatchObject({
+      resolution: 'promoted',
+      taskId: created!.id,
+    });
+    expect(new EventLogRepository(getDataStore().events).findAll()).toMatchObject([
+      { type: 'task-state-change', taskId: created!.id, from: null, to: 'open' },
+      { type: 'capture-resolved', itemId: 'p1', resolution: 'promoted', taskId: created!.id },
+    ]);
+  });
+
+  it('keeps a long thought whole in the task description', () => {
+    const long = 'x'.repeat(120);
+    getDataStore().parkingLot.replaceAll([{ id: 'p9', text: long, createdAt: '', sessionId: null }]);
+    vi.mocked(useTimer).mockImplementation(() => reentry());
+    render(<TimerPage />);
+    fireEvent.click(screen.getByRole('button', { name: `Make task: ${long}` }));
+    expect(getDataStore().tasks.findAll().find((t) => t.description === long)?.name).toHaveLength(80);
+  });
+
+  it('dismisses a parking-lot item without creating a task', () => {
+    vi.mocked(useTimer).mockImplementation(() => reentry());
+    render(<TimerPage />);
+    const before = getDataStore().tasks.findAll().length;
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss: Look up flights' }));
+
+    expect(screen.queryByText('Look up flights')).toBeNull();
+    expect(getDataStore().tasks.findAll()).toHaveLength(before);
+    expect(getDataStore().parkingLot.findById('p2')).toMatchObject({ resolution: 'dismissed' });
+  });
+});

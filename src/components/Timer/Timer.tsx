@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
-import ProgressRing from "./ProgressRing";
-import { formatOvertime, formatTime } from "../../utils/time";
-import type { TimerPhase } from "../../hooks/useTimer";
-import type { SessionType } from "../../types";
-import styles from "./Timer.module.css";
+import { useEffect, useState } from 'react';
+import ProgressRing from './ProgressRing';
+import { formatOvertime, formatTime } from '../../utils/time';
+import type { TimerPhase } from '../../hooks/useTimer';
+import type { SessionType } from '../../types';
+import styles from './Timer.module.css';
 
 interface TimerProps {
   phase: TimerPhase;
@@ -26,9 +26,9 @@ interface TimerProps {
 }
 
 const MODE_LABELS: Record<SessionType, string> = {
-  spike: "Spike",
-  "short-break": "Short Break",
-  "long-break": "Long Break",
+  spike: 'Spike',
+  'short-break': 'Short Break',
+  'long-break': 'Long Break',
 };
 
 const DOTS_COUNT = 4;
@@ -49,14 +49,14 @@ export default function Timer({
   onSkipBreak,
 }: TimerProps) {
   const [confirmingCancel, setConfirmingCancel] = useState(false);
-  const spikeRunning = phase === "spike";
+  const spikeRunning = phase === 'spike';
   const canCancel = !!onCancel && spikeRunning;
   const showConfirm = confirmingCancel && canCancel;
   // At the minimum the ring is full and the clock counts up.
   const minimumReached = spikeRunning && secondsLeft === 0;
-  const inOvertime = minimumReached || phase === "reentry";
+  const inOvertime = minimumReached;
   // A break is a rest screen: it shows no tasks and no progress to chase.
-  const resting = phase === "break" || phase === "reentry";
+  const resting = phase === 'break';
 
   // Drop a stale confirmation if the Spike stops underneath it.
   useEffect(() => {
@@ -68,13 +68,13 @@ export default function Timer({
     onCancel?.();
   };
 
-  let primaryLabel = "Start";
+  let primaryLabel = 'Start';
   let onPrimary = onStart;
   if (spikeRunning) {
-    primaryLabel = minimumReached ? "Take a break" : "End early";
+    primaryLabel = minimumReached ? 'Take a break' : 'End early';
     onPrimary = onEndSpike;
-  } else if (phase === "break") {
-    primaryLabel = "Skip break";
+  } else if (phase === 'break') {
+    primaryLabel = 'Skip break';
     onPrimary = onSkipBreak;
   }
 
@@ -90,9 +90,7 @@ export default function Timer({
 
   return (
     <div className={styles.container} data-timer>
-      <div className={styles.modeLabel}>
-        {phase === "reentry" ? "Break is up" : MODE_LABELS[mode]}
-      </div>
+      <div className={styles.modeLabel}>{MODE_LABELS[mode]}</div>
 
       <div className={styles.ringWrapper}>
         <ProgressRing progress={inOvertime ? 1 : progress} />
@@ -154,15 +152,15 @@ export default function Timer({
         // Always rendered so switching modes doesn't change the vertical layout;
         // hidden (but still taking space) outside of a running Spike.
         <button
-          className={`${styles.interruptBtn} ${mode === "spike" ? "" : styles.interruptBtnHidden}`}
+          className={`${styles.interruptBtn} ${mode === 'spike' ? '' : styles.interruptBtnHidden}`}
           onClick={onInterrupt}
           disabled={!spikeRunning}
-          aria-hidden={mode !== "spike"}
-          tabIndex={mode === "spike" ? 0 : -1}
+          aria-hidden={mode !== 'spike'}
+          tabIndex={mode === 'spike' ? 0 : -1}
           type="button"
           title="Note an interruption"
         >
-          ⚡ Interruption{interruptions > 0 ? ` (${interruptions})` : ""}
+          ⚡ Interruption{interruptions > 0 ? ` (${interruptions})` : ''}
         </button>
       )}
 
@@ -172,7 +170,7 @@ export default function Timer({
         <div
           className={styles.dots}
           role="img"
-          aria-label={`${filledDots} of ${plannedDots} ${isTaskScoped ? "task" : "cycle"} Spikes completed${extraDots > 0 ? `, ${extraDots} over estimate` : ""}`}
+          aria-label={`${filledDots} of ${plannedDots} ${isTaskScoped ? 'task' : 'cycle'} Spikes completed${extraDots > 0 ? `, ${extraDots} over estimate` : ''}`}
         >
           {Array.from({ length: dotsCount }).map((_, i) => (
             <span
@@ -186,7 +184,7 @@ export default function Timer({
                     : styles.dotEmpty
               }`}
             >
-              {i < filledDots ? "●" : "○"}
+              {i < filledDots ? '●' : '○'}
             </span>
           ))}
         </div>

@@ -69,6 +69,9 @@ export interface TaskDetails {
   whereWasI?: string;
 }
 
+/** Colour given to a task created without one, e.g. from the parking lot. */
+export const DEFAULT_TASK_COLOR = '#8c8442';
+
 export type SessionType = 'spike' | 'short-break' | 'long-break';
 
 export interface Session {
