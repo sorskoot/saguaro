@@ -20,6 +20,18 @@ export interface IStoreBackend {
   putMany<T>(store: StoreName, values: T[]): Promise<void>;
   delete(store: StoreName, key: IDBValidKey): Promise<void>;
   clear(store: StoreName): Promise<void>;
+  /**
+   * Replaces the contents of one or more stores in a single transaction: either
+   * every store ends up with its new records or, on failure, none is changed.
+   */
+  replaceStores(entries: StoreReplacement[]): Promise<void>;
+}
+
+export interface StoreReplacement {
+  store: StoreName;
+  values: unknown[];
+  /** Out-of-line key for every value (settings only). */
+  key?: IDBValidKey;
 }
 
 export function openDatabase(factory: IDBFactory = indexedDB): Promise<IDBDatabase> {
@@ -78,6 +90,30 @@ export class IdbBackend implements IStoreBackend {
 
   async clear(store: StoreName): Promise<void> {
     await this.transact(store, 'readwrite', (s) => s.clear());
+  }
+
+  replaceStores(entries: StoreReplacement[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(
+        entries.map((entry) => entry.store),
+        'readwrite',
+      );
+      try {
+        for (const { store, values, key } of entries) {
+          const objectStore = tx.objectStore(store);
+          objectStore.clear();
+          for (const value of values) objectStore.put(value, key);
+        }
+      } catch (err) {
+        // A value that cannot be stored must undo the clears that came before it.
+        tx.abort();
+        reject(err);
+        return;
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error ?? new Error('IndexedDB transaction failed'));
+      tx.onabort = () => reject(tx.error ?? new Error('IndexedDB transaction aborted'));
+    });
   }
 }
 

@@ -2,15 +2,55 @@ import type { IStoreBackend, StoreName } from './idb';
 import { SETTINGS_KEY } from './idb';
 
 /**
- * Serialises writes so they reach the database in the order they were made,
- * and reports (rather than throws) failures: the in-memory copy stays usable.
+ * Tells other tabs that a store changed, so they can reload it. Without this a
+ * second tab would keep working from a stale copy and could write it back over
+ * newer data.
+ */
+export interface IChangeNotifier {
+  /** Announce to the other tabs that `store` was written. */
+  notify(store: StoreName): void;
+  /** Call `listener` whenever another tab announces a change to `store`. */
+  subscribe(store: StoreName, listener: () => void): void;
+}
+
+/** {@link IChangeNotifier} over a BroadcastChannel; does nothing where that is unavailable. */
+export class BroadcastChangeNotifier implements IChangeNotifier {
+  private readonly channel: BroadcastChannel | null;
+  private readonly listeners = new Map<StoreName, Set<() => void>>();
+
+  constructor(name = 'saguaro-data') {
+    this.channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel(name);
+    if (this.channel) {
+      this.channel.onmessage = (event: MessageEvent<StoreName>) => {
+        this.listeners.get(event.data)?.forEach((listener) => listener());
+      };
+    }
+  }
+
+  notify(store: StoreName): void {
+    this.channel?.postMessage(store);
+  }
+
+  subscribe(store: StoreName, listener: () => void): void {
+    const set = this.listeners.get(store) ?? new Set();
+    set.add(listener);
+    this.listeners.set(store, set);
+  }
+}
+
+/**
+ * Serialises writes so they reach the database in the order they were made.
+ * A failed write is logged and remembered: later writes still run, and the
+ * next {@link flush} rejects so callers can tell that something was not saved.
  */
 class WriteQueue {
   private tail: Promise<void> = Promise.resolve();
+  private failure: unknown = null;
 
   constructor(
     private readonly label: string,
     private readonly backend: IStoreBackend | null,
+    private readonly onWritten?: () => void,
   ) {}
 
   enqueue(write: (backend: IStoreBackend) => Promise<void>): void {
@@ -18,13 +58,27 @@ class WriteQueue {
     if (!backend) return;
     this.tail = this.tail
       .then(() => write(backend))
+      .then(() => this.onWritten?.())
       .catch((err) => {
         console.error(`${this.label}: failed to write to IndexedDB`, err);
+        this.failure ??= err;
       });
   }
 
-  flush(): Promise<void> {
+  /** Waits for queued writes without consuming a failure meant for {@link flush}. */
+  drain(): Promise<void> {
     return this.tail;
+  }
+
+  /** Resolves once queued writes are done; rejects with the first failure since the last flush. */
+  flush(): Promise<void> {
+    return this.tail.then(() => {
+      if (this.failure !== null) {
+        const err = this.failure;
+        this.failure = null;
+        throw err;
+      }
+    });
   }
 }
 
@@ -47,8 +101,10 @@ export class CollectionStore<T extends { id: string }> {
     private readonly backend: IStoreBackend | null = null,
     /** Order applied after loading, because IndexedDB returns records sorted by key. */
     private readonly order?: (a: T, b: T) => number,
+    notifier?: IChangeNotifier,
   ) {
-    this.writes = new WriteQueue(`CollectionStore(${name})`, backend);
+    this.writes = new WriteQueue(`CollectionStore(${name})`, backend, () => notifier?.notify(name));
+    notifier?.subscribe(name, () => void this.refresh());
   }
 
   /** Loads everything stored in the database into memory. */
@@ -56,6 +112,20 @@ export class CollectionStore<T extends { id: string }> {
     if (!this.backend) return;
     const all = await this.backend.loadAll<T>(this.name);
     this.items = this.order ? all.sort(this.order) : all;
+  }
+
+  /**
+   * Reloads after another tab wrote. Our own pending writes go first. A save
+   * made in the instant between the read and the swap stays in the database but
+   * is missing here until the next reload; that window is a few milliseconds.
+   */
+  private async refresh(): Promise<void> {
+    try {
+      await this.writes.drain();
+      await this.hydrate();
+    } catch (err) {
+      console.error(`CollectionStore(${this.name}): failed to refresh from IndexedDB`, err);
+    }
   }
 
   findAll(): T[] {
@@ -78,21 +148,25 @@ export class CollectionStore<T extends { id: string }> {
     this.writes.enqueue((backend) => backend.delete(this.name, id));
   }
 
-  /** Replaces the whole collection, e.g. when restoring a backup. */
+  /** Replaces the whole collection in one transaction, so a failed write keeps the old records. */
   replaceAll(items: T[]): void {
     this.items = [...items];
     const snapshot = [...items];
-    this.writes.enqueue(async (backend) => {
-      await backend.clear(this.name);
-      if (snapshot.length > 0) await backend.putMany(this.name, snapshot);
-    });
+    this.writes.enqueue((backend) =>
+      backend.replaceStores([{ store: this.name, values: snapshot }]),
+    );
+  }
+
+  /** Replaces the in-memory copy only; the caller has already stored the items. */
+  setItems(items: T[]): void {
+    this.items = [...items];
   }
 
   clear(): void {
     this.replaceAll([]);
   }
 
-  /** Resolves once every queued write has reached the database. */
+  /** Resolves once every queued write has reached the database; rejects if one failed. */
   flush(): Promise<void> {
     return this.writes.flush();
   }
@@ -106,14 +180,25 @@ export class ValueStore<T> {
   constructor(
     private readonly name: StoreName,
     private readonly backend: IStoreBackend | null = null,
+    notifier?: IChangeNotifier,
   ) {
-    this.writes = new WriteQueue(`ValueStore(${name})`, backend);
+    this.writes = new WriteQueue(`ValueStore(${name})`, backend, () => notifier?.notify(name));
+    notifier?.subscribe(name, () => void this.refresh());
   }
 
   async hydrate(): Promise<void> {
     if (!this.backend) return;
     const [stored] = await this.backend.loadAll<T>(this.name);
     this.value = stored ?? null;
+  }
+
+  private async refresh(): Promise<void> {
+    try {
+      await this.writes.drain();
+      await this.hydrate();
+    } catch (err) {
+      console.error(`ValueStore(${this.name}): failed to refresh from IndexedDB`, err);
+    }
   }
 
   get(): T | null {
@@ -123,6 +208,11 @@ export class ValueStore<T> {
   set(value: T): void {
     this.value = value;
     this.writes.enqueue((backend) => backend.put(this.name, value, SETTINGS_KEY));
+  }
+
+  /** Replaces the in-memory copy only; the caller has already stored the value. */
+  setValue(value: T | null): void {
+    this.value = value;
   }
 
   clear(): void {

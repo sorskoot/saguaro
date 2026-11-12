@@ -117,4 +117,12 @@ describe('TimerPage event log', () => {
       { type: 'interruption', sessionId: null, taskId: 'first' },
     ]);
   });
+
+  it('shows the timer cycle, not the task total, for a task without an estimate', () => {
+    const { estimatedSpikes: _estimate, ...unestimated } = tasks[0];
+    getDataStore().tasks.replaceAll([unestimated as Task]);
+    // The mocked timer reports 5 completed Spikes in its cycle; the task has 1 of its own.
+    render(<TimerPage />);
+    expectDots(4, 1, 'cycle');
+  });
 });

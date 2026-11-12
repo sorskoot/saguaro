@@ -74,7 +74,7 @@ export default function HistoryPage() {
           aria-label="Filter sessions"
         >
           <option value="all">All sessions</option>
-          <option value="work">Work only</option>
+          <option value="spike">Work only</option>
           {tasks.map((task) => (
             <option key={task.id} value={task.id}>
               {task.name}

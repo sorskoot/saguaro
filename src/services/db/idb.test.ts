@@ -8,6 +8,8 @@ import {
   STORE_NAMES,
 } from './idb';
 import { CollectionStore, ValueStore } from './CollectionStore';
+import type { IChangeNotifier } from './CollectionStore';
+import { DataStore } from './DataStore';
 
 interface Item {
   id: string;
@@ -117,7 +119,7 @@ describe('CollectionStore', () => {
     expect(await backend.loadAll('tasks')).toEqual([]);
   });
 
-  it('reports failed writes without throwing and keeps later writes going', async () => {
+  it('reports failed writes through flush() and keeps later writes going', async () => {
     const backend = await freshBackend();
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     const original = backend.put.bind(backend);
@@ -129,12 +131,114 @@ describe('CollectionStore', () => {
     const store = new CollectionStore<Item>('tasks', backend);
     store.save({ id: 'a', n: 1 });
     store.save({ id: 'b', n: 2 });
-    await store.flush();
 
+    await expect(store.flush()).rejects.toThrow('disk full');
     expect(put).toHaveBeenCalledTimes(2);
     expect(error).toHaveBeenCalled();
     expect(await backend.loadAll('tasks')).toEqual([{ id: 'b', n: 2 }]);
+
+    // The failure is reported once; after that the queue is healthy again.
+    await expect(store.flush()).resolves.toBeUndefined();
     error.mockRestore();
+  });
+
+  it('keeps the old records when replaceAll cannot store a new one', async () => {
+    const backend = await freshBackend();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const store = new CollectionStore<Item>('tasks', backend);
+    store.save({ id: 'keep', n: 1 });
+    await store.flush();
+
+    // Functions cannot be stored in IndexedDB.
+    store.replaceAll([{ id: 'new', n: 2 }, { id: 'bad', n: () => 1 } as unknown as Item]);
+    await expect(store.flush()).rejects.toBeDefined();
+
+    expect(await backend.loadAll('tasks')).toEqual([{ id: 'keep', n: 1 }]);
+    error.mockRestore();
+  });
+});
+
+describe('DataStore.replaceAll', () => {
+  const settings = { spikeMinimum: 25 } as never;
+
+  it('replaces every store in one transaction and updates memory', async () => {
+    const backend = await freshBackend();
+    const data = new DataStore(backend);
+    data.tasks.save({ id: 'old', name: 'Old', color: '#000', state: 'open', createdAt: 'x' });
+    await data.flush();
+
+    const task = { id: 'new', name: 'New', color: '#000', state: 'open', createdAt: 'y' } as const;
+    await data.replaceAll({ settings, tasks: [task], sessions: [], events: [], parkingLot: [] });
+
+    expect(data.tasks.findAll()).toEqual([task]);
+    expect(data.settings.get()).toEqual(settings);
+    expect(await backend.loadAll('tasks')).toEqual([task]);
+    expect(await backend.loadAll('settings')).toEqual([settings]);
+  });
+
+  it('rejects and keeps both database and memory unchanged when saving fails', async () => {
+    const backend = await freshBackend();
+    const data = new DataStore(backend);
+    const keep = { id: 'keep', name: 'Keep', color: '#000', state: 'open', createdAt: 'x' } as const;
+    data.tasks.save(keep);
+    await data.flush();
+
+    const bad = { id: 'bad', n: () => 1 } as never;
+    await expect(
+      data.replaceAll({ settings, tasks: [bad], sessions: [], events: [], parkingLot: [] }),
+    ).rejects.toBeDefined();
+
+    expect(data.tasks.findAll()).toEqual([keep]);
+    expect(await backend.loadAll('tasks')).toEqual([keep]);
+  });
+});
+
+describe('cross-tab refresh', () => {
+  /** Two notifiers wired together like two tabs sharing a BroadcastChannel. */
+  function pairedNotifiers(): [IChangeNotifier, IChangeNotifier] {
+    const listeners: [Map<string, Array<() => void>>, Map<string, Array<() => void>>] = [
+      new Map(),
+      new Map(),
+    ];
+    const make = (me: 0 | 1): IChangeNotifier => ({
+      notify: (store) => listeners[1 - me].get(store)?.forEach((l) => l()),
+      subscribe: (store, l) => listeners[me].set(store, [...(listeners[me].get(store) ?? []), l]),
+    });
+    return [make(0), make(1)];
+  }
+
+  it('reloads a store when another tab writes to it', async () => {
+    const backend = await freshBackend();
+    const [a, b] = pairedNotifiers();
+    const tabA = new CollectionStore<Item>('tasks', backend, undefined, a);
+    const tabB = new CollectionStore<Item>('tasks', backend, undefined, b);
+
+    tabA.save({ id: 'x', n: 1 });
+    await tabA.flush();
+    await vi.waitFor(() => expect(tabB.findAll()).toEqual([{ id: 'x', n: 1 }]));
+
+    // Tab B now merges against the latest record, not a stale copy.
+    tabB.save({ id: 'x', n: 2 });
+    await tabB.flush();
+    await vi.waitFor(() => expect(tabA.findById('x')).toEqual({ id: 'x', n: 2 }));
+  });
+
+  it('reloads settings and tells other tabs after a restore', async () => {
+    const backend = await freshBackend();
+    const [a, b] = pairedNotifiers();
+    const tabA = new DataStore(backend, { notifier: a });
+    const tabB = new DataStore(backend, { notifier: b });
+
+    await tabA.replaceAll({
+      settings: { spikeMinimum: 40 } as never,
+      tasks: [{ id: 't', name: 'T', color: '#000', state: 'open', createdAt: 'x' }],
+      sessions: [],
+      events: [],
+      parkingLot: [],
+    });
+
+    await vi.waitFor(() => expect(tabB.tasks.findAll()).toHaveLength(1));
+    await vi.waitFor(() => expect(tabB.settings.get()).toEqual({ spikeMinimum: 40 }));
   });
 });
 

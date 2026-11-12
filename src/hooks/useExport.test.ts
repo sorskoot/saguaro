@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useExport } from './useExport';
 import { DEFAULT_SETTINGS, type AppData } from '../types';
-import { getDataStore } from '../services/db/DataStore';
+import { DataStore, getDataStore, setDataStore } from '../services/db/DataStore';
 
 // URL.createObjectURL / revokeObjectURL are not implemented in jsdom.
 // Define them once at the module level; individual tests can inspect the spies.
@@ -126,6 +126,38 @@ describe('useExport', () => {
       });
 
       expect(onError).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('when storage is unavailable', () => {
+    it('refuses to import instead of "succeeding" and losing the data on reload', async () => {
+      setDataStore(new DataStore(null, { storageUnavailable: true }));
+      const onSuccess = vi.fn();
+      const onError = vi.fn();
+      const { result } = renderHook(() => useExport({ onSuccess, onError }));
+
+      await act(async () => {
+        await result.current.importFromFile(makeFile(JSON.stringify(makeAppData())));
+      });
+
+      expect(onError).toHaveBeenCalledWith(expect.stringContaining('not letting Saguaro store data'));
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when saving fails', () => {
+    it('reports an error rather than success', async () => {
+      vi.spyOn(getDataStore(), 'replaceAll').mockRejectedValue(new Error('quota exceeded'));
+      const onSuccess = vi.fn();
+      const onError = vi.fn();
+      const { result } = renderHook(() => useExport({ onSuccess, onError }));
+
+      await act(async () => {
+        await result.current.importFromFile(makeFile(JSON.stringify(makeAppData())));
+      });
+
+      expect(onError).toHaveBeenCalledWith('quota exceeded');
+      expect(onSuccess).not.toHaveBeenCalled();
     });
   });
 });

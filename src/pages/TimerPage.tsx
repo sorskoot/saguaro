@@ -84,7 +84,9 @@ export default function TimerPage() {
 
   const totalSeconds = getTotalSeconds(timer.mode, settings);
   const selectedTask = tasks.find((task) => task.id === selectedTaskId);
-  const completedPomodoros = selectedTask
+  // Task-scoped counts only make sense against an estimate; otherwise the circles
+  // show the timer's own 4-Spike cycle, which must not change when switching tasks.
+  const completedPomodoros = selectedTask?.estimatedSpikes !== undefined
     ? sessions.filter(
         (session) =>
           session.taskId === selectedTask.id && session.type === 'spike' && session.completed,

@@ -58,7 +58,7 @@ describe('ExportService', () => {
   });
 
   describe('exportData()', () => {
-    it('returns AppData with the correct shape when storage is empty', () => {
+    it('returns AppData with the correct shape when storage is empty', async () => {
       expect(service.exportData()).toMatchObject({
         version: expect.any(String),
         settings: DEFAULT_SETTINGS,
@@ -70,11 +70,11 @@ describe('ExportService', () => {
       });
     });
 
-    it('writes the current backup version', () => {
+    it('writes the current backup version', async () => {
       expect(service.exportData().version).toBe('2.0');
     });
 
-    it('includes the event log and the parking lot', () => {
+    it('includes the event log and the parking lot', async () => {
       data.events.save(sampleEvent);
       data.parkingLot.save(sampleParkingItem);
 
@@ -83,25 +83,25 @@ describe('ExportService', () => {
       expect(exported.parkingLot).toEqual([sampleParkingItem]);
     });
 
-    it('includes stored settings', () => {
+    it('includes stored settings', async () => {
       data.settings.set(sampleSettings);
 
       expect(service.exportData().settings).toEqual(sampleSettings);
     });
 
-    it('includes stored tasks', () => {
+    it('includes stored tasks', async () => {
       data.tasks.save(sampleTask);
 
       expect(service.exportData().tasks).toEqual([sampleTask]);
     });
 
-    it('exports sessions with task associations', () => {
+    it('exports sessions with task associations', async () => {
       data.sessions.save(sampleSession);
 
       expect(service.exportData().sessions).toEqual([sampleSession]);
     });
 
-    it('exportedAt is a valid ISO date string', () => {
+    it('exportedAt is a valid ISO date string', async () => {
       const { exportedAt } = service.exportData();
 
       expect(new Date(exportedAt).toISOString()).toBe(exportedAt);
@@ -119,8 +119,8 @@ describe('ExportService', () => {
       exportedAt: '2024-01-01T12:00:00.000Z',
     };
 
-    it('writes settings, tasks, and sessions to the data store', () => {
-      service.importData(validPayload);
+    it('writes settings, tasks, and sessions to the data store', async () => {
+      await service.importData(validPayload);
 
       expect(data.settings.get()).toEqual(sampleSettings);
       expect(data.tasks.findAll()).toEqual([sampleTask]);
@@ -129,7 +129,7 @@ describe('ExportService', () => {
       expect(data.parkingLot.findAll()).toEqual([sampleParkingItem]);
     });
 
-    it('round-trips: exporting and importing into a fresh store restores everything', () => {
+    it('round-trips: exporting and importing into a fresh store restores everything', async () => {
       data.settings.set(sampleSettings);
       data.tasks.save(sampleTask);
       data.sessions.save(sampleSession);
@@ -138,7 +138,7 @@ describe('ExportService', () => {
       const backup = JSON.parse(JSON.stringify(service.exportData()));
 
       const restored = new DataStore();
-      new ExportService(restored).importData(backup);
+      await new ExportService(restored).importData(backup);
 
       expect(new ExportService(restored).exportData()).toEqual({
         ...backup,
@@ -146,61 +146,90 @@ describe('ExportService', () => {
       });
     });
 
-    it('replaces existing data rather than merging with it', () => {
+    it('replaces existing data rather than merging with it', async () => {
       data.tasks.save({ ...sampleTask, id: 'old' });
       data.events.save({ ...sampleEvent, id: 'old-event' });
 
-      service.importData(validPayload);
+      await service.importData(validPayload);
 
       expect(data.tasks.findAll().map((t) => t.id)).toEqual(['task-1']);
       expect(data.events.findAll().map((e) => e.id)).toEqual([sampleEvent.id]);
     });
 
-    it('sorts imported events chronologically', () => {
+    it('sorts imported events chronologically', async () => {
       const later = { ...sampleEvent, id: '0k0000000-0002-abcd1234' };
-      service.importData({ ...validPayload, events: [later, sampleEvent] });
+      await service.importData({ ...validPayload, events: [later, sampleEvent] });
 
       expect(data.events.findAll().map((e) => e.id)).toEqual([sampleEvent.id, later.id]);
     });
 
-    it('fills in missing settings from the defaults', () => {
-      service.importData({ ...validPayload, settings: { spikeMinimum: 40 } });
+    it('fills in missing settings from the defaults', async () => {
+      await service.importData({ ...validPayload, settings: { spikeMinimum: 40 } });
 
       expect(data.settings.get()).toEqual({ ...DEFAULT_SETTINGS, spikeMinimum: 40 });
     });
 
-    it('defaults a missing task state to open', () => {
+    it('defaults a missing task state to open', async () => {
       const { state: _state, ...stateless } = sampleTask;
-      service.importData({ ...validPayload, tasks: [stateless] });
+      await service.importData({ ...validPayload, tasks: [stateless] });
 
       expect(data.tasks.findAll()[0].state).toBe('open');
     });
 
-    it('rejects unsupported versions without changing anything', () => {
+    it('rejects unsupported versions without changing anything', async () => {
       data.tasks.save(sampleTask);
 
-      expect(() => service.importData({ ...validPayload, version: '3.0' })).toThrow(
+      await expect(service.importData({ ...validPayload, version: '3.0' })).rejects.toThrow(
         'unsupported version',
       );
       expect(data.tasks.findAll()).toEqual([sampleTask]);
     });
 
-    it('rejects records without an id and leaves existing data untouched', () => {
+    it('rejects records without an id and leaves existing data untouched', async () => {
       data.tasks.save(sampleTask);
 
-      expect(() =>
+      await expect(
         service.importData({ ...validPayload, events: [{ type: 'spike-start' }] }),
-      ).toThrow('events must be a list of records with an id');
-      expect(() => service.importData({ ...validPayload, settings: 'nope' })).toThrow(
+      ).rejects.toThrow('events[0] needs an id');
+      await expect(service.importData({ ...validPayload, settings: 'nope' })).rejects.toThrow(
         'settings must be an object',
       );
       expect(data.tasks.findAll()).toEqual([sampleTask]);
       expect(data.events.findAll()).toEqual([]);
     });
 
-    it('requires the event log and parking lot in a version 2 backup', () => {
+    it('rejects records that lack required fields, so a bad backup cannot break the next load', async () => {
+      data.tasks.save(sampleTask);
+
+      await expect(
+        service.importData({ ...validPayload, tasks: [{ id: 'a' }, { id: 'b' }] }),
+      ).rejects.toThrow('needs a string "name"');
+      await expect(
+        service.importData({ ...validPayload, sessions: [{ id: 's', type: 'nap', startTime: 'x', completed: true }] }),
+      ).rejects.toThrow('unknown type');
+      await expect(
+        service.importData({ ...validPayload, events: [{ id: 'e' }] }),
+      ).rejects.toThrow('needs a string "type"');
+      await expect(
+        service.importData({ ...validPayload, parkingLot: [{ id: 'p', text: 1, createdAt: 'x' }] }),
+      ).rejects.toThrow('needs a string "text"');
+      await expect(
+        service.importData({ ...validPayload, settings: { spikeMinimum: 'long' } }),
+      ).rejects.toThrow('settings needs a number "spikeMinimum"');
+      expect(data.tasks.findAll()).toEqual([sampleTask]);
+    });
+
+    it('rejects when the backup cannot be saved, leaving existing data in place', async () => {
+      data.tasks.save(sampleTask);
+      vi.spyOn(data, 'replaceAll').mockRejectedValue(new Error('quota exceeded'));
+
+      await expect(service.importData(validPayload)).rejects.toThrow('quota exceeded');
+      expect(data.tasks.findAll()).toEqual([sampleTask]);
+    });
+
+    it('requires the event log and parking lot in a version 2 backup', async () => {
       const { events: _events, ...withoutEvents } = validPayload;
-      expect(() => service.importData(withoutEvents)).toThrow('missing required fields');
+      expect(() => service.parse(withoutEvents)).toThrow('missing required fields');
     });
 
     describe('version 1 backups', () => {
@@ -226,8 +255,8 @@ describe('ExportService', () => {
         ],
       };
 
-      it('converts tasks: archived becomes done, estimatedPomodoros becomes estimatedSpikes', () => {
-        service.importData(v1Backup);
+      it('converts tasks: archived becomes done, estimatedPomodoros becomes estimatedSpikes', async () => {
+        await service.importData(v1Backup);
 
         const [active, archived] = data.tasks.findAll();
         expect(active).toMatchObject({ id: 'a', state: 'open', estimatedSpikes: 3 });
@@ -237,14 +266,14 @@ describe('ExportService', () => {
         expect(archived).not.toHaveProperty('estimatedSpikes');
       });
 
-      it("renames the 'work' session type to 'spike'", () => {
-        service.importData(v1Backup);
+      it("renames the 'work' session type to 'spike'", async () => {
+        await service.importData(v1Backup);
 
         expect(data.sessions.findAll().map((s) => s.type)).toEqual(['spike', 'short-break']);
       });
 
-      it('carries over renamed settings and drops the removed ones', () => {
-        service.importData(v1Backup);
+      it('carries over renamed settings and drops the removed ones', async () => {
+        await service.importData(v1Backup);
 
         const settings = data.settings.get()!;
         expect(settings).toMatchObject({
@@ -260,8 +289,8 @@ describe('ExportService', () => {
         expect(settings).not.toHaveProperty('autoStartPomodoros');
       });
 
-      it('imports with an empty event log and parking lot', () => {
-        const imported = service.importData(v1Backup);
+      it('imports with an empty event log and parking lot', async () => {
+        const imported = await service.importData(v1Backup);
 
         expect(imported.version).toBe('2.0');
         expect(imported.events).toEqual([]);
@@ -269,27 +298,27 @@ describe('ExportService', () => {
       });
     });
 
-    it('returns the imported AppData', () => {
-      expect(service.importData(validPayload)).toEqual(validPayload);
+    it('returns the imported AppData', async () => {
+      expect(await service.importData(validPayload)).toEqual(validPayload);
     });
 
-    it('throws when the input is not an object', () => {
-      expect(() => service.importData(null)).toThrow('Invalid import data');
-      expect(() => service.importData(42)).toThrow('Invalid import data');
+    it('throws when the input is not an object', async () => {
+      expect(() => service.parse(null)).toThrow('Invalid import data');
+      expect(() => service.parse(42)).toThrow('Invalid import data');
     });
 
-    it('throws when required fields are missing or invalid', () => {
-      expect(() => service.importData({ settings: sampleSettings, tasks: [], sessions: [] }))
+    it('throws when required fields are missing or invalid', async () => {
+      expect(() => service.parse({ settings: sampleSettings, tasks: [], sessions: [] }))
         .toThrow('Invalid import data');
-      expect(() => service.importData({ version: '1.0', tasks: [], sessions: [] }))
+      expect(() => service.parse({ version: '1.0', tasks: [], sessions: [] }))
         .toThrow('Invalid import data');
-      expect(() => service.importData({
+      expect(() => service.parse({
         version: '1.0',
         settings: sampleSettings,
         tasks: 'invalid',
         sessions: [],
       })).toThrow('Invalid import data');
-      expect(() => service.importData({
+      expect(() => service.parse({
         version: '1.0',
         settings: sampleSettings,
         tasks: [],

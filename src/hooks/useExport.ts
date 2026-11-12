@@ -72,10 +72,17 @@ export function useExport({
 
     const importFromFile = useCallback(
         async (file: File): Promise<void> => {
+            // Without storage an import would "succeed", then vanish on the reload that follows.
+            if (getDataStore().storageUnavailable) {
+                onError?.(
+                    'This browser is not letting Saguaro store data, so a backup cannot be restored.',
+                );
+                return;
+            }
             try {
                 const text = await file.text();
                 const parsed: unknown = JSON.parse(text);
-                service.importData(parsed);
+                await service.importData(parsed);
                 // The page reloads after a successful import, so make sure it is all saved first.
                 await getDataStore().flush();
                 onSuccess?.();
