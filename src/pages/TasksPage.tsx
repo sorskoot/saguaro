@@ -46,6 +46,8 @@ export default function TasksPage() {
       estimatedSpikes,
       description: details.description,
       link: details.link,
+      nextAction: details.nextAction,
+      whereWasI: details.whereWasI,
     });
     setFormState({ mode: 'hidden' });
   }

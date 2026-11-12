@@ -10,9 +10,20 @@ interface DailySummaryProps {
 // Default work duration used when per-session duration is unavailable.
 const DEFAULT_WORK_MINUTES = 25;
 
+/** Recorded start-to-end time; older records without one count as a default Spike. */
+function focusMinutesOf(session: Session): number {
+  if (session.endTime) {
+    const ms = Date.parse(session.endTime) - Date.parse(session.startTime);
+    if (Number.isFinite(ms) && ms >= 0 && session.endedEarly !== undefined) return ms / 60000;
+  }
+  return DEFAULT_WORK_MINUTES;
+}
+
 export default function DailySummary({ date, sessions }: DailySummaryProps) {
   const completedWork = sessions.filter((s) => s.type === 'spike' && s.completed);
-  const totalFocusMinutes = completedWork.length * DEFAULT_WORK_MINUTES;
+  const totalFocusMinutes = Math.round(
+    completedWork.reduce((sum, s) => sum + focusMinutesOf(s), 0),
+  );
   const focusHours = Math.floor(totalFocusMinutes / 60);
   const focusMinutes = totalFocusMinutes % 60;
 

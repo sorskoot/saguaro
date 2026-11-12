@@ -53,6 +53,11 @@ export default function TaskItem({
           {task.name}
           {isDone && <span className={styles.doneLabel}> (Done)</span>}
         </span>
+        {task.nextAction && (
+          <span className={styles.description} title={task.nextAction}>
+            Next: {task.nextAction}
+          </span>
+        )}
         {task.description && (
           <span className={styles.description} title={task.description}>
             {task.description}

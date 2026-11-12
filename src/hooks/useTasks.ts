@@ -74,6 +74,8 @@ export function useTasks(includeDone = false): UseTasksResult {
                 ...(estimatedSpikes !== undefined ? { estimatedSpikes } : {}),
                 ...(details?.description ? { description: details.description } : {}),
                 ...(details?.link ? { link: details.link } : {}),
+                ...(details?.nextAction ? { nextAction: details.nextAction } : {}),
+                ...(details?.whereWasI ? { whereWasI: details.whereWasI } : {}),
                 createdAt: new Date().toISOString(),
             };
             repo.save(task);

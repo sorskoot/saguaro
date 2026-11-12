@@ -31,6 +31,18 @@ describe('useTasks', () => {
     expect(task.createdAt.length).toBeGreaterThan(0);
   });
 
+  it('addTask stores an optional next action and where-was-I note', () => {
+    const { result } = renderHook(() => useTasks());
+    act(() => {
+      result.current.addTask('Noted', '#ff0000', undefined, { nextAction: 'Open the file', whereWasI: 'Line 40' });
+      result.current.addTask('Plain', '#ff0000', undefined, {});
+    });
+    const [noted, plain] = result.current.tasks;
+    expect(noted).toMatchObject({ nextAction: 'Open the file', whereWasI: 'Line 40' });
+    expect(plain).not.toHaveProperty('nextAction');
+    expect(plain).not.toHaveProperty('whereWasI');
+  });
+
   it('addTask stores an optional description and link', () => {
     const { result } = renderHook(() => useTasks());
 

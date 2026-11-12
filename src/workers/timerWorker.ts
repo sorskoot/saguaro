@@ -6,7 +6,7 @@ import type {
 } from '../types/timerWorker';
 
 let intervalId: number | null = null;
-let endAtMs = 0;
+let startedAtMs = 0;
 
 function stopInterval(): void {
     if (intervalId !== null) {
@@ -19,34 +19,32 @@ function emit(message: TimerWorkerEvent): void {
     self.postMessage(message);
 }
 
-function computeSecondsLeft(nowMs: number): number {
-    return Math.max(0, Math.ceil((endAtMs - nowMs) / 1000));
-}
-
+/**
+ * Elapsed time always comes from timestamps, never from counting ticks, so
+ * throttled background tabs still report the right time. The worker never
+ * decides when a session is over: Spikes and breaks can run past their length.
+ */
 function startLoop(): void {
     stopInterval();
-
     intervalId = self.setInterval(() => {
-        const secondsLeft = computeSecondsLeft(Date.now());
-        emit({ type: 'tick', secondsLeft });
-
-        if (secondsLeft <= 0) {
-            stopInterval();
-            emit({ type: 'complete' });
-        }
+        const elapsedSeconds = Math.max(
+            0,
+            Math.floor((Date.now() - startedAtMs) / 1000),
+        );
+        emit({ type: 'tick', startedAt: startedAtMs, elapsedSeconds });
     }, 1000);
 }
 
 self.onmessage = (event: MessageEvent<TimerWorkerCommand>) => {
     const message = event.data;
 
-    if (message.type === 'start' || message.type === 'sync') {
-        endAtMs = message.endAt;
+    if (message.type === 'start') {
+        startedAtMs = message.startedAt;
         startLoop();
         return;
     }
 
-    if (message.type === 'pause' || message.type === 'stop') {
+    if (message.type === 'stop') {
         stopInterval();
     }
 };

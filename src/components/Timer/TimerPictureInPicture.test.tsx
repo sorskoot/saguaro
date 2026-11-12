@@ -47,6 +47,16 @@ describe('TimerPictureInPicture', () => {
     expect(within(pipWindow.document.body).getByRole('timer')).toHaveTextContent('00:00');
   });
 
+  it('shows overtime and a custom label in the floating timer', async () => {
+    const pipWindow = createPipWindow();
+    installApi(vi.fn().mockResolvedValue(pipWindow));
+    render(<TimerPictureInPicture secondsLeft={0} overtimeSeconds={192} label="Break" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Float timer' }));
+
+    await waitFor(() => expect(within(pipWindow.document.body).getByRole('timer')).toHaveTextContent('+3:12'));
+    expect(within(pipWindow.document.body).getByText('Break')).toBeInTheDocument();
+  });
+
   it('closes from the app and allows reopening after the native window closes', async () => {
     const first = createPipWindow();
     const second = createPipWindow();

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { formatTime } from '../../utils/time';
+import { formatOvertime, formatTime } from '../../utils/time';
 import pictureInPictureStyles from './TimerPictureInPicture.css?inline';
 import styles from './Timer.module.css';
 
@@ -12,7 +12,18 @@ type PictureInPictureWindow = Window & {
   documentPictureInPicture?: DocumentPictureInPicture;
 };
 
-export default function TimerPictureInPicture({ secondsLeft }: { secondsLeft: number }) {
+interface TimerPictureInPictureProps {
+  secondsLeft: number;
+  /** When set, the clock is counting up (Spike overtime) and shows `+m:ss` instead. */
+  overtimeSeconds?: number;
+  label?: string;
+}
+
+export default function TimerPictureInPicture({
+  secondsLeft,
+  overtimeSeconds,
+  label = 'Spike',
+}: TimerPictureInPictureProps) {
   const api = (window as PictureInPictureWindow).documentPictureInPicture;
   const [pipWindow, setPipWindow] = useState<Window | null>(null);
   const [isOpening, setIsOpening] = useState(false);
@@ -79,9 +90,13 @@ export default function TimerPictureInPicture({ secondsLeft }: { secondsLeft: nu
       {error && <p role="alert">{error}</p>}
       {pipWindow && createPortal(
         <main className="floating-timer" aria-label="Saguaro timer">
-          <span className="floating-timer-label">Spike</span>
-          <div className="floating-timer-time" role="timer" aria-label="Time remaining">
-            {formatTime(secondsLeft)}
+          <span className="floating-timer-label">{label}</span>
+          <div
+            className="floating-timer-time"
+            role="timer"
+            aria-label={overtimeSeconds === undefined ? 'Time remaining' : 'Time past the minimum'}
+          >
+            {overtimeSeconds === undefined ? formatTime(secondsLeft) : formatOvertime(overtimeSeconds)}
           </div>
         </main>,
         pipWindow.document.body,

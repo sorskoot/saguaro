@@ -53,6 +53,22 @@ describe('TasksPage description and link', () => {
   });
 });
 
+describe('TasksPage notes', () => {
+  it('saves a next action and where-was-I note and shows the next action', () => {
+    render(<TasksPage />);
+    fireEvent.click(screen.getByTitle('Edit task'));
+    fireEvent.change(screen.getByLabelText('Next action (optional)'), { target: { value: 'Write the test' } });
+    fireEvent.change(screen.getByLabelText('Where was I (optional)'), { target: { value: 'Mid-refactor' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(getDataStore().tasks.findAll()[0]).toMatchObject({
+      nextAction: 'Write the test',
+      whereWasI: 'Mid-refactor',
+    });
+    expect(screen.getByText('Next: Write the test')).toBeInTheDocument();
+  });
+});
+
 describe('TasksPage done tasks', () => {
   it('hides done tasks by default and toggles them without changing storage', () => {
     render(<TasksPage />);
