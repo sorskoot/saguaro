@@ -35,6 +35,42 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The `autoStartBreaks` and `autoStartPomodoros` settings and the auto-start behaviour:
   the next session always starts by choice.
 
+### Added (focus loop)
+
+- A Spike no longer ends on its own. At the minimum the ring fills silently and the
+  clock keeps counting up (`+3:12`). The button reads *End early* before the minimum
+  (a partial Spike) and *Take a break* after. Cancel is still there, with
+  confirmation.
+- Breaks are a rest screen: a fixed-length countdown with no tasks or Spike circles
+  and a *Skip break* button. One soft chime plays when the break is up (the only
+  sound, controlled by `breakEndChime`); the clock then keeps counting the overrun
+  silently.
+- Re-entry screen after each break: tasks that are Ready or Asking with their
+  summaries, parking-lot items with one-tap *Make task* / *Dismiss*, and the next
+  Spike's task with its next action and where-was-I note. Start is always one tap
+  away; *Not now* returns to the idle timer.
+- Morning pick on the first open of each day (a day starts at 04:00 local time): the
+  open tasks with their notes; tapping one makes it the selected task.
+- Next action and where-was-I inputs in the task form; the next action shows on the
+  task row.
+- Session records now carry `overtimeSeconds`, `endedEarly` and `breakOverrunSeconds`,
+  and the Spike's interruption count.
+
+### Changed (focus loop)
+
+- `useTimer` is now a phase machine (`idle`, `spike`, `break`, `reentry`). Time is
+  derived from timestamps; the timer worker only reports elapsed seconds.
+- The Spike session is created when the Spike starts, so `spike-start` is logged at
+  the real start time and interruptions carry the running Spike's session id.
+- The floating timer shows `+m:ss` during overtime and labels breaks.
+- Long breaks come after every fourth Spike, partial ones included.
+
+### Removed (focus loop)
+
+- The mode tabs, Reset and Skip buttons, and Pause: a Spike is ended or cancelled, a
+  break is skipped.
+- The "session completed" notification and the notification permission prompt.
+
 ### Fixed
 
 - `useTimer`: `advanceMode` now uses `tickRef` to call the live `tick` function,

@@ -194,4 +194,9 @@ Agents are linked by **task code**. You tell the agent "working on #k3", or set 
 
 - *Asking* and *Ready* both count toward the soft cap.
 - A Spike ended early still counts toward the 4-Spike long-break cycle.
+- A new day starts at **04:00 local time**, fixed in v1. Morning pick shows once per day.
+- *End early* is followed by a break like any other Spike; the break can be skipped.
+- The break's chime moves the rest screen to Re-entry; the break is only closed (and its overrun recorded) when the next Spike starts or Re-entry is dismissed.
+- Re-entry's *What happened* lists every task currently Ready or Asking.
+- Morning pick selects the Focus task; it does not change task states until the Task states UI lands.
 - The global capture shortcut is `Ctrl/Cmd+Shift+Space` while the app or its Picture-in-Picture window has focus. Browsers can't register true OS-wide shortcuts.
