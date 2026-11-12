@@ -97,6 +97,13 @@ describe('TasksPage done tasks', () => {
     expect(screen.getByText('Done task')).toBeInTheDocument();
   });
 
+  it('disables Focus on a done task so it cannot be focused by mistake', () => {
+    render(<TasksPage />);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Show done tasks' }));
+    const row = screen.getByText('Done task').closest('li')!;
+    expect(within(row).getByRole('button', { name: 'Focus' })).toBeDisabled();
+  });
+
   it('lets a done task be reopened with one tap', () => {
     render(<TasksPage />);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Show done tasks' }));

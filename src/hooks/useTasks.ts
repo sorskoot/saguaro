@@ -76,9 +76,22 @@ export function useTasks(includeDone = false): UseTasksResult {
     const repo = repoRef.current;
 
     // allTasks holds every task (done or not) so marking a task done is reversible.
-    const [allTasks, setAllTasks] = useState<Task[]>(() =>
-        repo.findAll(),
-    );
+    const [allTasks, setAllTasks] = useState<Task[]>(() => {
+        // Two tabs can focus different tasks before either sees the other's write, leaving
+        // two Focus tasks. Repair that on load: the earliest-created one keeps Focus.
+        const focused = repo.findAll().filter((task) => task.state === 'focus');
+        for (const task of focused.slice(1)) {
+            repo.save(withState(task, 'open'));
+            logEvent({
+                type: 'task-state-change',
+                taskId: task.id,
+                from: 'focus',
+                to: 'open',
+                source: 'user',
+            });
+        }
+        return repo.findAll();
+    });
 
     const tasks = includeDone ? allTasks : allTasks.filter((task) => task.state !== 'done');
     const focusTaskId = allTasks.find((task) => task.state === 'focus')?.id ?? null;
@@ -157,13 +170,13 @@ export function useTasks(includeDone = false): UseTasksResult {
     // updaters twice (StrictMode), which would write every event twice.
     const updateTask = useCallback(
         (id: string, partial: Partial<Task>) => {
-            if (partial.state === 'focus' && repo.findById(id)) {
-                // Keep Focus exclusive, then apply whatever else changed.
-                setFocus(id);
-                const { state: _state, ...rest } = partial;
-                partial = rest;
-            }
+            // Focus is exclusive, so it always goes through setFocus: apply the other
+            // changes first (a missing task is created Open), then take Focus.
+            const wantsFocus = partial.state === 'focus';
             const existing = repo.findById(id);
+            if (wantsFocus) {
+                partial = { ...partial, state: existing?.state ?? 'open' };
+            }
             const updated: Task = existing
                 ? { ...existing, ...partial, id }
                 : ({ ...partial, id } as Task);
@@ -182,6 +195,7 @@ export function useTasks(includeDone = false): UseTasksResult {
                     ? prev.map((task) => (task.id === id ? updated : task))
                     : [...prev, updated],
             );
+            if (wantsFocus) setFocus(id);
         },
         [repo, setFocus],
     );

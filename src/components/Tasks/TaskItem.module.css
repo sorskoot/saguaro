@@ -146,6 +146,11 @@
   background-color: rgba(230, 226, 195, 0.06);
 }
 
+.stateBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .stateActive,
 .stateActive:hover {
   color: var(--color-on-primary);

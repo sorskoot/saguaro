@@ -110,6 +110,8 @@ export default function TaskItem({
             className={`${styles.stateBtn} ${task.state === state ? styles.stateActive : ''}`}
             type="button"
             aria-pressed={task.state === state}
+            // A done task has to be reopened before it can take Focus.
+            disabled={isDone && state === 'focus'}
             onClick={() => onSetState(state)}
           >
             {STATE_LABELS[state]}

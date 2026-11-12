@@ -273,3 +273,29 @@ describe('event log: focus switches', () => {
     expect(result.current.tasks.find((t) => t.id === a)).not.toHaveProperty('summary');
   });
 });
+
+describe('Focus exclusivity edge cases', () => {
+  it('repairs two Focus tasks left by concurrent tabs when the hook loads', () => {
+    getDataStore().tasks.replaceAll([
+      { id: 'a', name: 'A', color: '#000', createdAt: '1', state: 'focus' },
+      { id: 'b', name: 'B', color: '#000', createdAt: '2', state: 'focus' },
+    ]);
+    const { result } = renderHook(() => useTasks());
+    expect(result.current.focusTaskId).toBe('a');
+    expect(result.current.tasks.map((t) => t.state)).toEqual(['focus', 'open']);
+  });
+
+  it('keeps Focus exclusive when updateTask upserts a new task with state focus', () => {
+    const { result } = renderHook(() => useTasks());
+    let a = '';
+    act(() => {
+      a = result.current.addTask('A', '#000', undefined).id;
+    });
+    act(() => result.current.setFocus(a));
+    act(() => result.current.updateTask('new', { name: 'N', color: '#000', createdAt: '9', state: 'focus' }));
+
+    expect(result.current.focusTaskId).toBe('new');
+    expect(result.current.tasks.filter((t) => t.state === 'focus')).toHaveLength(1);
+    expect(result.current.tasks.find((t) => t.id === a)?.state).toBe('open');
+  });
+});
