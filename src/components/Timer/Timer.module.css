@@ -94,32 +94,6 @@
   filter: brightness(0.95);
 }
 
-/* Secondary: Reset / Skip */
-.secondaryBtn {
-  border-radius: var(--radius-full);
-  border: 1px solid var(--color-border);
-  background: none;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xl);
-  line-height: 1;
-  width: 48px;
-  height: 48px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition:
-    color var(--transition-fast),
-    border-color var(--transition-fast),
-    background-color var(--transition-fast);
-}
-
-.secondaryBtn:hover {
-  color: var(--color-text-primary);
-  border-color: rgba(230, 226, 195, 0.22);
-  background-color: rgba(230, 226, 195, 0.06);
-}
-
 .pictureInPictureBtn {
   padding: var(--space-sm) var(--space-md);
   border: 1px solid var(--color-border);
@@ -270,4 +244,18 @@
 .interruptBtn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* Quiet text button next to the primary action while a Spike runs */
+.cancelBtn {
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  background: none;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.cancelBtn:hover {
+  color: var(--color-text-primary);
 }

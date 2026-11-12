@@ -2,22 +2,14 @@ import { useCallback, useRef, useState } from 'react';
 import { useSelectedTask } from '../hooks/useSelectedTask';
 import { useSettings } from '../hooks/useSettings';
 import { useTimer } from '../hooks/useTimer';
+import type { BreakType, SpikeEndInfo } from '../hooks/useTimer';
 import { useTasks } from '../hooks/useTasks';
 import { useSessions } from '../hooks/useSessions';
-import ModeSelector from '../components/ModeSelector';
 import Timer from '../components/Timer';
 import TimerPictureInPicture from '../components/Timer/TimerPictureInPicture';
 import TaskSelector from '../components/TaskSelector';
-import type { SessionType } from '../types';
-import type { Settings } from '../types';
 import { logEvent } from '../services/eventLog';
 import styles from './TimerPage.module.css';
-
-function getTotalSeconds(mode: SessionType, settings: Settings): number {
-  if (mode === 'spike') return settings.spikeMinimum * 60;
-  if (mode === 'short-break') return settings.shortBreakDuration * 60;
-  return settings.longBreakDuration * 60;
-}
 
 export default function TimerPage() {
   const { settings } = useSettings();
@@ -27,6 +19,9 @@ export default function TimerPage() {
 
   const [interruptions, setInterruptions] = useState(0);
   const interruptionsRef = useRef(0);
+  // The Spike and break that are running, so what happens next is recorded against them.
+  const spikeSessionIdRef = useRef<string | null>(null);
+  const breakSessionIdRef = useRef<string | null>(null);
 
   const resetInterruptions = useCallback(() => {
     interruptionsRef.current = 0;
@@ -36,82 +31,101 @@ export default function TimerPage() {
   const handleInterrupt = useCallback(() => {
     interruptionsRef.current += 1;
     setInterruptions(interruptionsRef.current);
-    // The Spike's session record is only created when it ends, so there is no session id yet.
-    logEvent({ type: 'interruption', sessionId: null, taskId: selectedTaskId });
+    logEvent({
+      type: 'interruption',
+      sessionId: spikeSessionIdRef.current,
+      taskId: selectedTaskId,
+    });
   }, [selectedTaskId]);
 
-  const handleComplete = useCallback(
-    (completedMode: SessionType) => {
-      // Record the completed session immediately upon completion.
-      const count = completedMode === 'spike' ? interruptionsRef.current : 0;
-      const session = addSession(completedMode, selectedTaskId, count);
-      completeSession(session.id);
-      resetInterruptions();
-    },
-    [addSession, completeSession, selectedTaskId, resetInterruptions],
-  );
-
-  const handleCancelled = useCallback(
-    (cancelledMode: SessionType) => {
-      // Log the cancelled session (never counted as completed).
-      const count = cancelledMode === 'spike' ? interruptionsRef.current : 0;
-      const session = addSession(cancelledMode, selectedTaskId, count);
-      cancelSession(session.id);
-      resetInterruptions();
-    },
-    [addSession, cancelSession, selectedTaskId, resetInterruptions],
-  );
-
-  const timer = useTimer({ settings, onComplete: handleComplete, onCancel: handleCancelled });
-
-  const handleReset = useCallback(() => {
-    timer.reset();
+  const handleSpikeStart = useCallback(() => {
     resetInterruptions();
-  }, [timer, resetInterruptions]);
+    spikeSessionIdRef.current = addSession('spike', selectedTaskId).id;
+  }, [addSession, selectedTaskId, resetInterruptions]);
 
-  const handleSkip = useCallback(() => {
-    timer.skip();
-    resetInterruptions();
-  }, [timer, resetInterruptions]);
-
-  const handleChangeMode = useCallback(
-    (mode: SessionType) => {
-      timer.changeMode(mode);
+  const handleSpikeEnd = useCallback(
+    ({ endedEarly, overtimeSeconds }: SpikeEndInfo) => {
+      const id = spikeSessionIdRef.current;
+      if (id) {
+        completeSession(id, {
+          endedEarly,
+          overtimeSeconds,
+          interruptions: interruptionsRef.current,
+        });
+      }
+      spikeSessionIdRef.current = null;
       resetInterruptions();
     },
-    [timer, resetInterruptions],
+    [completeSession, resetInterruptions],
   );
 
-  const totalSeconds = getTotalSeconds(timer.mode, settings);
+  const handleSpikeCancel = useCallback(() => {
+    const id = spikeSessionIdRef.current;
+    if (id) cancelSession(id, { interruptions: interruptionsRef.current });
+    spikeSessionIdRef.current = null;
+    resetInterruptions();
+  }, [cancelSession, resetInterruptions]);
+
+  const handleBreakStart = useCallback(
+    (breakType: BreakType) => {
+      breakSessionIdRef.current = addSession(breakType, selectedTaskId).id;
+    },
+    [addSession, selectedTaskId],
+  );
+
+  const handleBreakEnd = useCallback(
+    ({ overrunSeconds }: { overrunSeconds: number }) => {
+      const id = breakSessionIdRef.current;
+      if (id) {
+        completeSession(id, { breakOverrunSeconds: overrunSeconds });
+      }
+      breakSessionIdRef.current = null;
+    },
+    [completeSession],
+  );
+
+  const timer = useTimer({
+    settings,
+    onSpikeStart: handleSpikeStart,
+    onSpikeEnd: handleSpikeEnd,
+    onSpikeCancel: handleSpikeCancel,
+    onBreakStart: handleBreakStart,
+    onBreakEnd: handleBreakEnd,
+  });
+
   const selectedTask = tasks.find((task) => task.id === selectedTaskId);
   // Task-scoped counts only make sense against an estimate; otherwise the circles
   // show the timer's own 4-Spike cycle, which must not change when switching tasks.
-  const completedPomodoros = selectedTask?.estimatedSpikes !== undefined
+  const completedSpikes = selectedTask?.estimatedSpikes !== undefined
     ? sessions.filter(
         (session) =>
           session.taskId === selectedTask.id && session.type === 'spike' && session.completed,
       ).length
-    : timer.pomodoroCount;
+    : timer.spikeCount;
+  const overtimeShown = timer.phase === 'spike' && timer.secondsLeft === 0;
 
   return (
     <div className={styles.page}>
-      <ModeSelector mode={timer.mode} onChange={handleChangeMode} />
       <Timer
-        secondsLeft={timer.secondsLeft}
-        totalSeconds={totalSeconds}
-        isRunning={timer.isRunning}
+        phase={timer.phase}
         mode={timer.mode}
-        pomodoroCount={completedPomodoros}
+        secondsLeft={timer.secondsLeft}
+        totalSeconds={timer.totalSeconds}
+        overtimeSeconds={timer.overtimeSeconds}
+        spikeCount={completedSpikes}
         estimatedSpikes={selectedTask?.estimatedSpikes}
         interruptions={interruptions}
         onInterrupt={handleInterrupt}
         onStart={timer.start}
-        onPause={timer.pause}
+        onEndSpike={timer.endSpike}
         onCancel={timer.cancel}
-        onReset={handleReset}
-        onSkip={handleSkip}
+        onSkipBreak={timer.skipBreak}
       />
-      <TimerPictureInPicture secondsLeft={timer.secondsLeft} />
+      <TimerPictureInPicture
+        secondsLeft={timer.secondsLeft}
+        overtimeSeconds={overtimeShown ? timer.overtimeSeconds : undefined}
+        label={timer.mode === 'spike' ? 'Spike' : 'Break'}
+      />
       <TaskSelector
         tasks={tasks}
         selectedId={selectedTaskId}

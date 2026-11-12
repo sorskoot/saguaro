@@ -1,358 +1,325 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { timerService } from '../services/TimerService';
-import { playBeep } from '../utils/sound';
-import type { Settings, SessionType } from '../types';
+import { useState, useRef, useCallback, useEffect } from "react";
+import { timerService } from "../services/TimerService";
+import { playChime } from "../utils/sound";
+import type { Settings } from "../types";
 import type {
-    TimerWorkerCommand,
-    TimerWorkerEvent,
-} from '../types/timerWorker';
+  TimerWorkerCommand,
+  TimerWorkerEvent,
+} from "../types/timerWorker";
+
+/**
+ * Where the focus loop is:
+ * - idle: nothing running, the next Spike is ready to start
+ * - spike: a Spike is running; past its minimum it keeps counting up (overtime)
+ * - break: a fixed-length break is counting down
+ * - reentry: the break is up (the chime has played) or was skipped; if it ran
+ *   out, the clock keeps counting the overrun silently until the next Spike
+ *   starts or Re-entry is dismissed
+ */
+export type TimerPhase = "idle" | "spike" | "break" | "reentry";
+
+export type BreakType = "short-break" | "long-break";
+
+export interface SpikeEndInfo {
+  /** True when the Spike ended before its minimum (a partial Spike). */
+  endedEarly: boolean;
+  /** Seconds the Spike ran past its minimum; 0 for a partial Spike. */
+  overtimeSeconds: number;
+}
 
 export interface UseTimerOptions {
-    settings: Settings;
-    onComplete?: (mode: SessionType) => void;
-    onCancel?: (mode: SessionType) => void;
+  settings: Settings;
+  onSpikeStart?: () => void;
+  onSpikeEnd?: (info: SpikeEndInfo) => void;
+  /** The Spike was cancelled: it is logged but never counted. */
+  onSpikeCancel?: () => void;
+  onBreakStart?: (breakType: BreakType) => void;
+  onBreakEnd?: (info: { overrunSeconds: number }) => void;
 }
 
 export interface UseTimerResult {
-    secondsLeft: number;
-    isRunning: boolean;
-    mode: SessionType;
-    pomodoroCount: number;
-    start: () => void;
-    pause: () => void;
-    /** Cancels the running session: it is logged as cancelled, not counted, and the clock resets. */
-    cancel: () => void;
-    reset: () => void;
-    skip: () => void;
-    changeMode: (mode: SessionType) => void;
+  phase: TimerPhase;
+  /** What the clock is for: a Spike, or the kind of break that is running. */
+  mode: "spike" | BreakType;
+  /** Seconds left until the Spike minimum / the end of the break; never below 0. */
+  secondsLeft: number;
+  /** The full length the countdown started from, in seconds. */
+  totalSeconds: number;
+  /** Seconds past the Spike minimum, or past the end of the break. */
+  overtimeSeconds: number;
+  isRunning: boolean;
+  /** Spikes finished so far, including ones ended early. Drives the long-break cycle. */
+  spikeCount: number;
+  /** Starts a Spike (from idle, or from Re-entry). */
+  start: () => void;
+  /** Ends the running Spike and starts the break. */
+  endSpike: () => void;
+  /** Cancels the running Spike: logged as cancelled, not counted, no break. */
+  cancel: () => void;
+  /** Ends a running break early and goes to Re-entry. */
+  skipBreak: () => void;
+  /** Leaves Re-entry without starting a Spike. */
+  dismissReentry: () => void;
 }
 
-/** Returns the duration in seconds for the given mode and settings. */
-function durationFor(mode: SessionType, settings: Settings): number {
-    if (mode === 'spike') return settings.spikeMinimum * 60;
-    if (mode === 'short-break') return settings.shortBreakDuration * 60;
-    return settings.longBreakDuration * 60;
-}
-
-/**
- * Determines the next mode after the current one completes.
- * After every `longBreakInterval` work sessions, a long break is inserted.
- * `pomodoroCount` is the number of *completed* work sessions so far (before
- * incrementing for the one that just finished).
- */
-function nextMode(
-    current: SessionType,
-    pomodoroCount: number,
-    settings: Settings,
-): SessionType {
-    if (current !== 'spike') {
-        // After any break, always go back to work.
-        return 'spike';
-    }
-    // Increment happens before this call in the effect, so we use the
-    // already-updated count passed in.
-    const newCount = pomodoroCount + 1;
-    return newCount % settings.longBreakInterval === 0
-        ? 'long-break'
-        : 'short-break';
-}
-
-function notifyCompletion(mode: SessionType): void {
-    if (typeof window === 'undefined' || typeof Notification === 'undefined')
-        return;
-    if (Notification.permission !== 'granted') return;
-
-    const modeLabel =
-        mode === 'spike'
-            ? 'Spike'
-            : mode === 'short-break'
-              ? 'Short break'
-              : 'Long break';
-
-    new Notification('Saguaro', {
-        body: `${modeLabel} completed.`,
-        tag: 'saguaro-complete',
-    });
+function breakSeconds(type: BreakType, settings: Settings): number {
+  return (
+    (type === "short-break"
+      ? settings.shortBreakDuration
+      : settings.longBreakDuration) * 60
+  );
 }
 
 export function useTimer({
-    settings,
-    onComplete,
-    onCancel,
+  settings,
+  onSpikeStart,
+  onSpikeEnd,
+  onSpikeCancel,
+  onBreakStart,
+  onBreakEnd,
 }: UseTimerOptions): UseTimerResult {
-    const [mode, setMode] = useState<SessionType>('spike');
-    const [secondsLeft, setSecondsLeft] = useState<number>(
-        durationFor('spike', settings),
-    );
-    const [isRunning, setIsRunning] = useState(false);
-    const [pomodoroCount, setPomodoroCount] = useState(0);
+  const [phase, setPhaseState] = useState<TimerPhase>("idle");
+  const [breakType, setBreakType] = useState<BreakType>("short-break");
+  const [elapsed, setElapsed] = useState(0);
+  const [spikeCount, setSpikeCount] = useState(0);
 
-    // Keep stable refs so the tick closure always sees the latest values without
-    // needing to restart the interval.
-    const modeRef = useRef(mode);
-    const secondsLeftRef = useRef(secondsLeft);
-    const isRunningRef = useRef(isRunning);
-    const pomodoroCountRef = useRef(pomodoroCount);
-    const settingsRef = useRef(settings);
-    const onCompleteRef = useRef(onComplete);
-    const onCancelRef = useRef(onCancel);
-    const workerRef = useRef<Worker | null>(null);
-    const endAtRef = useRef<number | null>(null);
-    const usingWorkerRef = useRef(false);
+  // Refs let the tick closure and the worker handler always see current values.
+  const phaseRef = useRef(phase);
+  const breakTypeRef = useRef(breakType);
+  const breakOpenRef = useRef(false);
+  const elapsedRef = useRef(0);
+  const spikeCountRef = useRef(0);
+  const startedAtRef = useRef(0);
+  const settingsRef = useRef(settings);
+  const callbacksRef = useRef({
+    onSpikeStart,
+    onSpikeEnd,
+    onSpikeCancel,
+    onBreakStart,
+    onBreakEnd,
+  });
+  const workerRef = useRef<Worker | null>(null);
 
-    const setRunning = useCallback((running: boolean) => {
-        isRunningRef.current = running;
-        setIsRunning(running);
-    }, []);
-
-    useEffect(() => {
-        modeRef.current = mode;
-    }, [mode]);
-    useEffect(() => {
-        secondsLeftRef.current = secondsLeft;
-    }, [secondsLeft]);
-    useEffect(() => {
-        isRunningRef.current = isRunning;
-    }, [isRunning]);
-    useEffect(() => {
-        pomodoroCountRef.current = pomodoroCount;
-    }, [pomodoroCount]);
-    useEffect(() => {
-        settingsRef.current = settings;
-    }, [settings]);
-    useEffect(() => {
-        onCompleteRef.current = onComplete;
-    }, [onComplete]);
-    useEffect(() => {
-        onCancelRef.current = onCancel;
-    }, [onCancel]);
-
-    // When settings change, reset the timer to the new duration for the current mode
-    // only if it is not currently running.
-    useEffect(() => {
-        if (!isRunning) {
-            setSecondsLeft(durationFor(mode, settings));
-        }
-        // Intentional: only the three duration fields should trigger this reset.
-        // Including `isRunning` would fire on every pause/resume (resetting a mid-session
-        // timer); including `mode` would fire on every session transition. Neither is
-        // desired. There is no isRunningRef to use as a workaround without adding new
-        // logic, so the exhaustive-deps rule must be suppressed here.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [
-        settings.spikeMinimum,
-        settings.shortBreakDuration,
-        settings.longBreakDuration,
-    ]);
-
-    /** Advance to the next mode and wait there; the next session starts by choice. */
-    const advanceMode = useCallback(() => {
-        const currentMode = modeRef.current;
-        const currentCount = pomodoroCountRef.current;
-        const currentSettings = settingsRef.current;
-
-        if (currentMode === 'spike') {
-            const newCount = currentCount + 1;
-            setPomodoroCount(newCount);
-            pomodoroCountRef.current = newCount;
-        }
-
-        const next = nextMode(currentMode, currentCount, currentSettings);
-        const nextSeconds = durationFor(next, currentSettings);
-
-        setMode(next);
-        modeRef.current = next;
-        setSecondsLeft(nextSeconds);
-        secondsLeftRef.current = nextSeconds;
-
-        setRunning(false);
-        endAtRef.current = null;
-    }, [setRunning]);
-
-    useEffect(() => {
-        if (typeof Worker === 'undefined') {
-            usingWorkerRef.current = false;
-            return;
-        }
-
-        const worker = new Worker(
-            new URL('../workers/timerWorker.ts', import.meta.url),
-            { type: 'module' },
-        );
-        workerRef.current = worker;
-        usingWorkerRef.current = true;
-
-        worker.onmessage = (event: MessageEvent<TimerWorkerEvent>) => {
-            const message = event.data;
-
-            if (message.type === 'tick') {
-                setSecondsLeft(message.secondsLeft);
-                secondsLeftRef.current = message.secondsLeft;
-                return;
-            }
-
-            if (message.type === 'complete') {
-                setSecondsLeft(0);
-                secondsLeftRef.current = 0;
-                setRunning(false);
-                endAtRef.current = null;
-
-                const completedMode = modeRef.current;
-                const currentSettings = settingsRef.current;
-
-                onCompleteRef.current?.(completedMode);
-                if (currentSettings.breakEndChime && completedMode !== 'spike') {
-                    playBeep();
-                }
-                notifyCompletion(completedMode);
-
-                advanceMode();
-            }
-        };
-
-        return () => {
-            worker.postMessage({ type: 'stop' } satisfies TimerWorkerCommand);
-            worker.terminate();
-            workerRef.current = null;
-            usingWorkerRef.current = false;
-        };
-    }, [advanceMode, setRunning]);
-
-    /** Called every second by timerService. */
-    const tick = useCallback(() => {
-        const next = secondsLeftRef.current - 1;
-        if (next > 0) {
-            setSecondsLeft(next);
-            secondsLeftRef.current = next;
-            return;
-        }
-
-        // Timer hit zero — stop the service, then handle completion.
-        timerService.stop();
-        setSecondsLeft(0);
-        secondsLeftRef.current = 0;
-        setRunning(false);
-        endAtRef.current = null;
-
-        const completedMode = modeRef.current;
-        const currentSettings = settingsRef.current;
-
-        // Fire callback.
-        onCompleteRef.current?.(completedMode);
-
-        // The chime is the only sound, and only when a break ends.
-        if (currentSettings.breakEndChime && completedMode !== 'spike') {
-            playBeep();
-        }
-        notifyCompletion(completedMode);
-
-        advanceMode();
-    }, [advanceMode, setRunning]);
-
-    const stopActiveTimer = useCallback(() => {
-        workerRef.current?.postMessage({
-            type: 'pause',
-        } satisfies TimerWorkerCommand);
-        timerService.stop();
-        setRunning(false);
-        endAtRef.current = null;
-    }, [setRunning]);
-
-    const start = useCallback(() => {
-        if (isRunningRef.current) return;
-
-        const endAt = Date.now() + secondsLeftRef.current * 1000;
-        endAtRef.current = endAt;
-
-        if (usingWorkerRef.current && workerRef.current) {
-            workerRef.current.postMessage({
-                type: 'start',
-                endAt,
-            } satisfies TimerWorkerCommand);
-            setRunning(true);
-            return;
-        }
-
-        if (timerService.isRunning()) return;
-        timerService.start(tick);
-        setRunning(true);
-    }, [setRunning, tick]);
-
-    const pause = useCallback(() => {
-        stopActiveTimer();
-    }, [stopActiveTimer]);
-
-    const cancel = useCallback(() => {
-        stopActiveTimer();
-        // Log the cancellation, then reset the clock in the same mode: no
-        // count increment, no break, no sound/notification.
-        const cancelledMode = modeRef.current;
-        onCancelRef.current?.(cancelledMode);
-        const duration = durationFor(cancelledMode, settingsRef.current);
-        setSecondsLeft(duration);
-        secondsLeftRef.current = duration;
-    }, [stopActiveTimer]);
-
-    const reset = useCallback(() => {
-        stopActiveTimer();
-        const duration = durationFor(modeRef.current, settingsRef.current);
-        setSecondsLeft(duration);
-        secondsLeftRef.current = duration;
-    }, [stopActiveTimer]);
-
-    const skip = useCallback(() => {
-        stopActiveTimer();
-        // Advance without triggering callback or sound.
-        const currentMode = modeRef.current;
-        const currentCount = pomodoroCountRef.current;
-        const currentSettings = settingsRef.current;
-
-        let newCount = currentCount;
-        if (currentMode === 'spike') {
-            newCount = currentCount + 1;
-            setPomodoroCount(newCount);
-            pomodoroCountRef.current = newCount;
-        }
-
-        const next = nextMode(currentMode, currentCount, currentSettings);
-        const nextSeconds = durationFor(next, currentSettings);
-
-        setMode(next);
-        modeRef.current = next;
-        setSecondsLeft(nextSeconds);
-        secondsLeftRef.current = nextSeconds;
-    }, [stopActiveTimer]);
-
-    /** Stop the timer and jump directly to the given mode, resetting the clock. */
-    const changeMode = useCallback(
-        (newMode: SessionType) => {
-            stopActiveTimer();
-            const duration = durationFor(newMode, settingsRef.current);
-            setMode(newMode);
-            modeRef.current = newMode;
-            setSecondsLeft(duration);
-            secondsLeftRef.current = duration;
-        },
-        [stopActiveTimer],
-    );
-
-    // Clean up the interval when the component unmounts.
-    useEffect(() => {
-        return () => {
-            timerService.stop();
-        };
-    }, []);
-
-    return {
-        secondsLeft,
-        isRunning,
-        mode,
-        pomodoroCount,
-        start,
-        pause,
-        cancel,
-        reset,
-        skip,
-        changeMode,
+  useEffect(() => {
+    settingsRef.current = settings;
+    callbacksRef.current = {
+      onSpikeStart,
+      onSpikeEnd,
+      onSpikeCancel,
+      onBreakStart,
+      onBreakEnd,
     };
+  });
+
+  const setPhase = useCallback((next: TimerPhase) => {
+    phaseRef.current = next;
+    setPhaseState(next);
+  }, []);
+
+  const setElapsedSeconds = useCallback((seconds: number) => {
+    elapsedRef.current = seconds;
+    setElapsed(seconds);
+  }, []);
+
+  /** Every clock source ends up here with the seconds since the session began. */
+  const handleElapsed = useCallback(
+    (seconds: number) => {
+      const current = phaseRef.current;
+      // In Re-entry the clock only runs while a break's overrun is being counted.
+      if (current === "idle") return;
+      if (current === "reentry" && !breakOpenRef.current) return;
+      setElapsedSeconds(seconds);
+
+      // The break is up: one soft chime, then Re-entry. The clock keeps counting.
+      if (
+        current === "break" &&
+        seconds >= breakSeconds(breakTypeRef.current, settingsRef.current)
+      ) {
+        setPhase("reentry");
+        if (settingsRef.current.breakEndChime) playChime();
+      }
+    },
+    [setElapsedSeconds, setPhase],
+  );
+
+  const handleElapsedRef = useRef(handleElapsed);
+  useEffect(() => {
+    handleElapsedRef.current = handleElapsed;
+  }, [handleElapsed]);
+
+  const syncFromClock = useCallback(() => {
+    handleElapsedRef.current(
+      Math.max(0, Math.floor((Date.now() - startedAtRef.current) / 1000)),
+    );
+  }, []);
+
+  useEffect(() => {
+    if (typeof Worker === "undefined") return;
+
+    const worker = new Worker(
+      new URL("../workers/timerWorker.ts", import.meta.url),
+      { type: "module" },
+    );
+    workerRef.current = worker;
+    worker.onmessage = (event: MessageEvent<TimerWorkerEvent>) => {
+      if (event.data.type === "tick") {
+        handleElapsedRef.current(event.data.elapsedSeconds);
+      }
+    };
+
+    return () => {
+      worker.postMessage({ type: "stop" } satisfies TimerWorkerCommand);
+      worker.terminate();
+      workerRef.current = null;
+    };
+  }, []);
+
+  // Catch up the moment the tab becomes visible again.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") syncFromClock();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [syncFromClock]);
+
+  const stopClock = useCallback(() => {
+    workerRef.current?.postMessage({
+      type: "stop",
+    } satisfies TimerWorkerCommand);
+    timerService.stop();
+  }, []);
+
+  /** Begin counting from zero for a new Spike or break. */
+  const startClock = useCallback(() => {
+    stopClock();
+    startedAtRef.current = Date.now();
+    setElapsedSeconds(0);
+    if (workerRef.current) {
+      workerRef.current.postMessage({
+        type: "start",
+        startedAt: startedAtRef.current,
+      } satisfies TimerWorkerCommand);
+    } else {
+      timerService.start(syncFromClock);
+    }
+  }, [stopClock, setElapsedSeconds, syncFromClock]);
+
+  /** Seconds since the session began, read from the clock rather than the last tick. */
+  const liveElapsed = useCallback(
+    () =>
+      Math.max(
+        elapsedRef.current,
+        Math.floor((Date.now() - startedAtRef.current) / 1000),
+      ),
+    [],
+  );
+
+  /** Close the break that is running or over, recording any silent overrun. */
+  const finishBreak = useCallback(
+    (elapsedSeconds = liveElapsed()) => {
+      if (!breakOpenRef.current) return;
+      breakOpenRef.current = false;
+      const overrunSeconds = Math.max(
+        0,
+        elapsedSeconds -
+          breakSeconds(breakTypeRef.current, settingsRef.current),
+      );
+      stopClock();
+      callbacksRef.current.onBreakEnd?.({ overrunSeconds });
+    },
+    [liveElapsed, stopClock],
+  );
+
+  const beginBreak = useCallback(
+    (type: BreakType) => {
+      breakTypeRef.current = type;
+      breakOpenRef.current = true;
+      setBreakType(type);
+      setPhase("break");
+      startClock();
+      callbacksRef.current.onBreakStart?.(type);
+    },
+    [setPhase, startClock],
+  );
+
+  const start = useCallback(() => {
+    const current = phaseRef.current;
+    if (current !== "idle" && current !== "reentry") return;
+    finishBreak();
+    setPhase("spike");
+    startClock();
+    callbacksRef.current.onSpikeStart?.();
+  }, [finishBreak, setPhase, startClock]);
+
+  const endSpike = useCallback(() => {
+    if (phaseRef.current !== "spike") return;
+    const currentSettings = settingsRef.current;
+    const minimum = currentSettings.spikeMinimum * 60;
+    const elapsedSeconds = liveElapsed();
+    const endedEarly = elapsedSeconds < minimum;
+    const overtimeSeconds = Math.max(0, elapsedSeconds - minimum);
+
+    // Ended-early Spikes still count toward the long-break cycle.
+    const count = spikeCountRef.current + 1;
+    spikeCountRef.current = count;
+    setSpikeCount(count);
+
+    callbacksRef.current.onSpikeEnd?.({ endedEarly, overtimeSeconds });
+    beginBreak(
+      count % currentSettings.longBreakInterval === 0
+        ? "long-break"
+        : "short-break",
+    );
+  }, [beginBreak, liveElapsed]);
+
+  const cancel = useCallback(() => {
+    if (phaseRef.current !== "spike") return;
+    stopClock();
+    setPhase("idle");
+    setElapsedSeconds(0);
+    callbacksRef.current.onSpikeCancel?.();
+  }, [stopClock, setPhase, setElapsedSeconds]);
+
+  const skipBreak = useCallback(() => {
+    if (phaseRef.current !== "break") return;
+    // Skipping is not overrunning: clear the clock before closing the break.
+    setElapsedSeconds(0);
+    finishBreak(0);
+    setPhase("reentry");
+  }, [finishBreak, setPhase, setElapsedSeconds]);
+
+  const dismissReentry = useCallback(() => {
+    if (phaseRef.current !== "reentry") return;
+    finishBreak();
+    setPhase("idle");
+    setElapsedSeconds(0);
+  }, [finishBreak, setPhase, setElapsedSeconds]);
+
+  useEffect(() => {
+    return () => timerService.stop();
+  }, []);
+
+  const spikeTotal = settings.spikeMinimum * 60;
+  const inBreak = phase === "break" || phase === "reentry";
+  const totalSeconds = inBreak ? breakSeconds(breakType, settings) : spikeTotal;
+  const secondsLeft =
+    phase === "idle" ? spikeTotal : Math.max(0, totalSeconds - elapsed);
+  const overtimeSeconds =
+    phase === "idle" ? 0 : Math.max(0, elapsed - totalSeconds);
+
+  return {
+    phase,
+    mode: inBreak ? breakType : "spike",
+    secondsLeft,
+    totalSeconds,
+    overtimeSeconds,
+    isRunning: phase === "spike" || phase === "break",
+    spikeCount,
+    start,
+    endSpike,
+    cancel,
+    skipBreak,
+    dismissReentry,
+  };
 }

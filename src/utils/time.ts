@@ -4,6 +4,14 @@ export function formatTime(seconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+/** Overtime as shown on the ring, e.g. `+3:12`. */
+export function formatOvertime(seconds: number): string {
+  const total = Math.max(0, Math.floor(seconds));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `+${m}:${String(s).padStart(2, '0')}`;
+}
+
 export function formatDate(isoString: string): string {
   return new Date(isoString).toLocaleDateString(undefined, {
     year: 'numeric',

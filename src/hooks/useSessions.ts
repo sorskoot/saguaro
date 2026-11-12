@@ -13,6 +13,8 @@ export interface SessionEndDetails {
     endedEarly?: boolean;
     /** Break only: seconds past the fixed length. */
     breakOverrunSeconds?: number;
+    /** Spike only: interruptions noted while it ran. */
+    interruptions?: number;
 }
 
 export interface UseSessionsResult {
@@ -44,8 +46,9 @@ export interface UseSessionsResult {
     /**
      * Marks a session as cancelled: sets its end timestamp but not `completed`.
      * @param id Session id to cancel.
+     * @param details Optional facts to record, such as the interruption count.
      */
-    cancelSession: (id: string) => void;
+    cancelSession: (id: string, details?: SessionEndDetails) => void;
 
     /**
      * Permanently removes a session.
@@ -113,6 +116,9 @@ export function useSessions(): UseSessionsResult {
                 ...(details.breakOverrunSeconds !== undefined
                     ? { breakOverrunSeconds: details.breakOverrunSeconds }
                     : {}),
+                ...(details.interruptions !== undefined
+                    ? { interruptions: details.interruptions }
+                    : {}),
             };
             repo.save(updated);
             logEvent(
@@ -141,7 +147,7 @@ export function useSessions(): UseSessionsResult {
     );
 
     const cancelSession = useCallback(
-        (id: string) => {
+        (id: string, details: SessionEndDetails = {}) => {
             const existing = repo.findById(id);
             if (!existing) return;
             const updated: Session = {
@@ -149,6 +155,9 @@ export function useSessions(): UseSessionsResult {
                 completed: false,
                 cancelled: true,
                 endTime: new Date().toISOString(),
+                ...(details.interruptions !== undefined
+                    ? { interruptions: details.interruptions }
+                    : {}),
             };
             repo.save(updated);
             logEvent(

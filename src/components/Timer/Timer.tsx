@@ -1,24 +1,28 @@
 import { useEffect, useState } from 'react';
 import ProgressRing from './ProgressRing';
-import { formatTime } from '../../utils/time';
+import { formatOvertime, formatTime } from '../../utils/time';
+import type { TimerPhase } from '../../hooks/useTimer';
 import type { SessionType } from '../../types';
 import styles from './Timer.module.css';
 
 interface TimerProps {
+  phase: TimerPhase;
+  mode: SessionType;
   secondsLeft: number;
   totalSeconds: number;
-  isRunning: boolean;
-  mode: SessionType;
-  pomodoroCount: number;
+  /** Seconds past the Spike minimum or past the end of the break. */
+  overtimeSeconds: number;
+  /** Spikes finished in the current 4-Spike cycle, or for the selected task. */
+  spikeCount: number;
   estimatedSpikes?: number;
   interruptions?: number;
   onInterrupt?: () => void;
   onStart: () => void;
-  onPause: () => void;
-  /** When provided, a running Spike shows "Cancel" instead of "Pause"; after confirmation the Spike is logged as cancelled (not counted). */
+  /** Ends the running Spike: partial before the minimum, complete after. */
+  onEndSpike: () => void;
+  /** After confirmation the Spike is logged as cancelled (not counted). */
   onCancel?: () => void;
-  onReset: () => void;
-  onSkip: () => void;
+  onSkipBreak: () => void;
 }
 
 const MODE_LABELS: Record<SessionType, string> = {
@@ -30,57 +34,67 @@ const MODE_LABELS: Record<SessionType, string> = {
 const DOTS_COUNT = 4;
 
 export default function Timer({
+  phase,
+  mode,
   secondsLeft,
   totalSeconds,
-  isRunning,
-  mode,
-  pomodoroCount,
+  overtimeSeconds,
+  spikeCount,
   estimatedSpikes,
   interruptions = 0,
   onInterrupt,
   onStart,
-  onPause,
+  onEndSpike,
   onCancel,
-  onReset,
-  onSkip,
+  onSkipBreak,
 }: TimerProps) {
   const [confirmingCancel, setConfirmingCancel] = useState(false);
-  const canCancel = !!onCancel && mode === 'spike';
-  const showConfirm = confirmingCancel && isRunning && canCancel;
+  const spikeRunning = phase === 'spike';
+  const canCancel = !!onCancel && spikeRunning;
+  const showConfirm = confirmingCancel && canCancel;
+  // At the minimum the ring is full and the clock counts up.
+  const minimumReached = spikeRunning && secondsLeft === 0;
+  const inOvertime = minimumReached || phase === 'reentry';
 
-  // Drop a stale confirmation if the session stops or changes underneath it.
+  // Drop a stale confirmation if the Spike stops underneath it.
   useEffect(() => {
-    if (!isRunning || !canCancel) setConfirmingCancel(false);
-  }, [isRunning, canCancel]);
-
-  const handlePrimary = () => {
-    if (!isRunning) onStart();
-    else if (canCancel) setConfirmingCancel(true);
-    else onPause();
-  };
+    if (!canCancel) setConfirmingCancel(false);
+  }, [canCancel]);
 
   const handleConfirmCancel = () => {
     setConfirmingCancel(false);
     onCancel?.();
   };
 
-  const primaryLabel = !isRunning ? 'Start' : canCancel ? 'Cancel' : 'Pause';
+  let primaryLabel = 'Start';
+  let onPrimary = onStart;
+  if (spikeRunning) {
+    primaryLabel = minimumReached ? 'Take a break' : 'End early';
+    onPrimary = onEndSpike;
+  } else if (phase === 'break') {
+    primaryLabel = 'Skip break';
+    onPrimary = onSkipBreak;
+  }
 
-  const progress = totalSeconds > 0 ? secondsLeft / totalSeconds : 0;
+  const progress = totalSeconds > 0 ? 1 - secondsLeft / totalSeconds : 0;
   const plannedDots = estimatedSpikes ?? DOTS_COUNT;
   const isTaskScoped = estimatedSpikes !== undefined;
-  // Sessions beyond the estimate get extra dots in a different colour.
-  const extraDots = isTaskScoped ? Math.max(0, pomodoroCount - plannedDots) : 0;
+  // Spikes beyond the estimate get extra dots in a different colour.
+  const extraDots = isTaskScoped ? Math.max(0, spikeCount - plannedDots) : 0;
   const dotsCount = plannedDots + extraDots;
-  const filledDots = isTaskScoped ? Math.min(pomodoroCount, dotsCount) : pomodoroCount % DOTS_COUNT;
+  const filledDots = isTaskScoped ? Math.min(spikeCount, dotsCount) : spikeCount % DOTS_COUNT;
 
   return (
     <div className={styles.container} data-timer>
-      <div className={styles.modeLabel}>{MODE_LABELS[mode]}</div>
+      <div className={styles.modeLabel}>
+        {phase === 'reentry' ? 'Break is up' : MODE_LABELS[mode]}
+      </div>
 
       <div className={styles.ringWrapper}>
-        <ProgressRing progress={progress} />
-        <div className={styles.timeDisplay}>{formatTime(secondsLeft)}</div>
+        <ProgressRing progress={inOvertime ? 1 : progress} />
+        <div className={styles.timeDisplay}>
+          {inOvertime ? formatOvertime(overtimeSeconds) : formatTime(secondsLeft)}
+        </div>
       </div>
 
       {showConfirm ? (
@@ -97,25 +111,24 @@ export default function Timer({
         </div>
       ) : (
         <div className={styles.controls}>
-          <button className={styles.secondaryBtn} onClick={onReset} type="button" title="Reset">
-            ⟳
-          </button>
-          <button className={styles.primaryBtn} onClick={handlePrimary} type="button">
+          <button className={styles.primaryBtn} onClick={onPrimary} type="button">
             {primaryLabel}
           </button>
-          <button className={styles.secondaryBtn} onClick={onSkip} type="button" title="Skip">
-            ⏭
-          </button>
+          {canCancel && (
+            <button className={styles.cancelBtn} onClick={() => setConfirmingCancel(true)} type="button">
+              Cancel
+            </button>
+          )}
         </div>
       )}
 
       {onInterrupt && (
         // Always rendered so switching modes doesn't change the vertical layout;
-        // hidden (but still taking space) outside of Spike mode.
+        // hidden (but still taking space) outside of a running Spike.
         <button
           className={`${styles.interruptBtn} ${mode === 'spike' ? '' : styles.interruptBtnHidden}`}
           onClick={onInterrupt}
-          disabled={!isRunning || mode !== 'spike'}
+          disabled={!spikeRunning}
           aria-hidden={mode !== 'spike'}
           tabIndex={mode === 'spike' ? 0 : -1}
           type="button"

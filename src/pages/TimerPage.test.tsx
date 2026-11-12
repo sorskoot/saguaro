@@ -13,7 +13,16 @@ const tasks: Task[] = [
   { id: 'second', name: 'Second task', color: '#e74c3c', estimatedSpikes: 6, createdAt: '', state: 'open' },
 ];
 
-let onComplete: UseTimerOptions['onComplete'];
+let options: UseTimerOptions;
+
+function timerResult(overrides: Partial<ReturnType<typeof useTimer>> = {}): ReturnType<typeof useTimer> {
+  return {
+    phase: 'idle', mode: 'spike', secondsLeft: 1500, totalSeconds: 1500, overtimeSeconds: 0,
+    isRunning: false, spikeCount: 5,
+    start: vi.fn(), endSpike: vi.fn(), cancel: vi.fn(), skipBreak: vi.fn(), dismissReentry: vi.fn(),
+    ...overrides,
+  };
+}
 
 function session(id: string, taskId: string | null, type: SessionType = 'spike', completed = true): Session {
   return { id, taskId, type, completed, startTime: '', endTime: completed ? '' : null };
@@ -38,12 +47,9 @@ beforeEach(() => {
     session('other', 'second'),
     session('unassigned', null),
   ]);
-  vi.mocked(useTimer).mockImplementation((options) => {
-    onComplete = options.onComplete;
-    return {
-      secondsLeft: 1500, isRunning: false, mode: 'spike', pomodoroCount: 5,
-      start: vi.fn(), pause: vi.fn(), cancel: vi.fn(), reset: vi.fn(), skip: vi.fn(), changeMode: vi.fn(),
-    };
+  vi.mocked(useTimer).mockImplementation((opts) => {
+    options = opts;
+    return timerResult();
   });
 });
 
@@ -84,7 +90,10 @@ describe('TimerPage Spike circles', () => {
 
   it('fills a circle on work completion and retains progress after remounting', () => {
     const { unmount } = render(<TimerPage />);
-    act(() => onComplete?.('spike'));
+    act(() => {
+      options.onSpikeStart?.();
+      options.onSpikeEnd?.({ endedEarly: false, overtimeSeconds: 0 });
+    });
     expectDots(3, 2);
     unmount();
     render(<TimerPage />);
@@ -93,7 +102,10 @@ describe('TimerPage Spike circles', () => {
 
   it('does not fill a circle on break completion', () => {
     render(<TimerPage />);
-    act(() => onComplete?.('short-break'));
+    act(() => {
+      options.onBreakStart?.('short-break');
+      options.onBreakEnd?.({ overrunSeconds: 0 });
+    });
     expectDots(3, 1);
   });
 
@@ -105,19 +117,84 @@ describe('TimerPage Spike circles', () => {
 });
 
 describe('TimerPage event log', () => {
-  it('logs an interruption against the selected task', () => {
-    vi.mocked(useTimer).mockReturnValue({
-      secondsLeft: 1000, isRunning: true, mode: 'spike', pomodoroCount: 0,
-      start: vi.fn(), pause: vi.fn(), cancel: vi.fn(), reset: vi.fn(), skip: vi.fn(), changeMode: vi.fn(),
+  beforeEach(() => {
+    vi.mocked(useTimer).mockImplementation((opts) => {
+      options = opts;
+      return timerResult({ phase: 'spike', isRunning: true, secondsLeft: 1000 });
     });
+  });
+
+  it('logs an interruption against the running Spike and the selected task', () => {
     render(<TimerPage />);
+    act(() => options.onSpikeStart?.());
     fireEvent.click(screen.getByTitle('Note an interruption'));
 
+    const events = new EventLogRepository(getDataStore().events).findAll();
+    expect(events).toMatchObject([
+      { type: 'spike-start', taskId: 'first' },
+      { type: 'interruption', taskId: 'first' },
+    ]);
+    const [start, interruption] = events;
+    expect(interruption).toMatchObject({ sessionId: (start as { sessionId: string }).sessionId });
+  });
+
+  it('records the Spike when it starts, then its overtime and interruptions when it ends', () => {
+    render(<TimerPage />);
+    act(() => options.onSpikeStart?.());
+    const [startEvent] = new EventLogRepository(getDataStore().events).findAll();
+    const running = getDataStore().sessions.findById((startEvent as { sessionId: string }).sessionId);
+    expect(running).toMatchObject({ type: 'spike', taskId: 'first', endTime: null, completed: false });
+
+    fireEvent.click(screen.getByTitle('Note an interruption'));
+    act(() => options.onSpikeEnd?.({ endedEarly: false, overtimeSeconds: 900 }));
+
+    const ended = getDataStore().sessions.findAll().find((s) => s.overtimeSeconds === 900);
+    expect(ended).toMatchObject({ completed: true, taskId: 'first', interruptions: 1, endedEarly: false });
     expect(new EventLogRepository(getDataStore().events).findAll()).toMatchObject([
-      { type: 'interruption', sessionId: null, taskId: 'first' },
+      { type: 'spike-start' },
+      { type: 'interruption' },
+      { type: 'spike-end', outcome: 'completed', overtimeSeconds: 900 },
     ]);
   });
 
+  it('records a partial Spike as ended early', () => {
+    render(<TimerPage />);
+    act(() => {
+      options.onSpikeStart?.();
+      options.onSpikeEnd?.({ endedEarly: true, overtimeSeconds: 0 });
+    });
+    expect(new EventLogRepository(getDataStore().events).findAll()).toMatchObject([
+      { type: 'spike-start' },
+      { type: 'spike-end', outcome: 'ended-early' },
+    ]);
+  });
+
+  it('logs a cancelled Spike as not completed', () => {
+    render(<TimerPage />);
+    act(() => {
+      options.onSpikeStart?.();
+      options.onSpikeCancel?.();
+    });
+    const cancelled = getDataStore().sessions.findAll().find((s) => s.cancelled);
+    expect(cancelled).toMatchObject({ completed: false, type: 'spike' });
+  });
+
+  it('records the break and its silent overrun', () => {
+    render(<TimerPage />);
+    act(() => {
+      options.onBreakStart?.('long-break');
+      options.onBreakEnd?.({ overrunSeconds: 240 });
+    });
+    const longBreak = getDataStore().sessions.findAll().filter((s) => s.type === 'long-break' && s.endTime);
+    expect(longBreak.find((s) => s.breakOverrunSeconds === 240)).toMatchObject({ completed: true });
+    expect(new EventLogRepository(getDataStore().events).findAll()).toMatchObject([
+      { type: 'break-start', breakType: 'long-break' },
+      { type: 'break-end', overrunSeconds: 240 },
+    ]);
+  });
+});
+
+describe('TimerPage Spike circles without an estimate', () => {
   it('shows the timer cycle, not the task total, for a task without an estimate', () => {
     const { estimatedSpikes: _estimate, ...unestimated } = tasks[0];
     getDataStore().tasks.replaceAll([unestimated as Task]);
