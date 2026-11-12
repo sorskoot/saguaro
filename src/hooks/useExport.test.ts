@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useExport } from './useExport';
 import { DEFAULT_SETTINGS, type AppData } from '../types';
+import { DataStore, getDataStore, setDataStore } from '../services/db/DataStore';
 
 // URL.createObjectURL / revokeObjectURL are not implemented in jsdom.
 // Define them once at the module level; individual tests can inspect the spies.
@@ -27,10 +28,12 @@ beforeEach(() => {
 /** Builds a minimal valid AppData payload. */
 function makeAppData(overrides: Partial<AppData> = {}): AppData {
   return {
-    version: '1.0',
+    version: '2.0',
     settings: { ...DEFAULT_SETTINGS },
     tasks: [],
     sessions: [],
+    events: [],
+    parkingLot: [],
     exportedAt: new Date().toISOString(),
     ...overrides,
   };
@@ -77,12 +80,12 @@ describe('useExport', () => {
   });
 
   describe('importFromFile()', () => {
-    it('reads valid JSON and writes data to localStorage, then calls onSuccess', async () => {
+    it('reads valid JSON and writes data to the data store, then calls onSuccess', async () => {
       const onSuccess = vi.fn();
       const onError = vi.fn();
       const { result } = renderHook(() => useExport({ onSuccess, onError }));
 
-      const data = makeAppData({ settings: { ...DEFAULT_SETTINGS, workDuration: 30 } });
+      const data = makeAppData({ settings: { ...DEFAULT_SETTINGS, spikeMinimum: 30 } });
       const file = makeFile(JSON.stringify(data));
 
       await act(async () => {
@@ -92,9 +95,7 @@ describe('useExport', () => {
       expect(onSuccess).toHaveBeenCalledTimes(1);
       expect(onError).not.toHaveBeenCalled();
 
-      // ExportService.importData writes individual keys to localStorage.
-      const stored = JSON.parse(localStorage.getItem('saguaro_settings')!);
-      expect(stored.workDuration).toBe(30);
+      expect(getDataStore().settings.get()?.spikeMinimum).toBe(30);
     });
 
     it('calls onError when the file contains invalid JSON', async () => {
@@ -125,6 +126,38 @@ describe('useExport', () => {
       });
 
       expect(onError).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('when storage is unavailable', () => {
+    it('refuses to import instead of "succeeding" and losing the data on reload', async () => {
+      setDataStore(new DataStore(null, { storageUnavailable: true }));
+      const onSuccess = vi.fn();
+      const onError = vi.fn();
+      const { result } = renderHook(() => useExport({ onSuccess, onError }));
+
+      await act(async () => {
+        await result.current.importFromFile(makeFile(JSON.stringify(makeAppData())));
+      });
+
+      expect(onError).toHaveBeenCalledWith(expect.stringContaining('not letting Saguaro store data'));
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when saving fails', () => {
+    it('reports an error rather than success', async () => {
+      vi.spyOn(getDataStore(), 'replaceAll').mockRejectedValue(new Error('quota exceeded'));
+      const onSuccess = vi.fn();
+      const onError = vi.fn();
+      const { result } = renderHook(() => useExport({ onSuccess, onError }));
+
+      await act(async () => {
+        await result.current.importFromFile(makeFile(JSON.stringify(makeAppData())));
+      });
+
+      expect(onError).toHaveBeenCalledWith('quota exceeded');
+      expect(onSuccess).not.toHaveBeenCalled();
     });
   });
 });

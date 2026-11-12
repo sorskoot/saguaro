@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { useSessions } from './useSessions';
+import { getDataStore } from '../services/db/DataStore';
 
 beforeEach(() => {
   localStorage.clear();
@@ -15,12 +16,12 @@ describe('useSessions', () => {
     const { result } = renderHook(() => useSessions());
 
     act(() => {
-      result.current.addSession('work', null);
+      result.current.addSession('spike', null);
     });
 
     expect(result.current.sessions).toHaveLength(1);
     const s = result.current.sessions[0];
-    expect(s.type).toBe('work');
+    expect(s.type).toBe('spike');
     expect(s.taskId).toBeNull();
     expect(s.completed).toBe(false);
     expect(s.endTime).toBeNull();
@@ -33,7 +34,7 @@ describe('useSessions', () => {
     const { result } = renderHook(() => useSessions());
 
     act(() => {
-      result.current.addSession('work', null);
+      result.current.addSession('spike', null);
     });
     const id = result.current.sessions[0].id;
 
@@ -51,7 +52,7 @@ describe('useSessions', () => {
     const { result } = renderHook(() => useSessions());
 
     act(() => {
-      result.current.addSession('work', null);
+      result.current.addSession('spike', null);
     });
     const id = result.current.sessions[0].id;
 
@@ -69,7 +70,7 @@ describe('useSessions', () => {
     const { result } = renderHook(() => useSessions());
 
     act(() => {
-      result.current.addSession('work', null);
+      result.current.addSession('spike', null);
     });
     const id = result.current.sessions[0].id;
 
@@ -79,7 +80,7 @@ describe('useSessions', () => {
 
     expect(result.current.sessions).toHaveLength(0);
 
-    const stored: unknown[] = JSON.parse(localStorage.getItem('saguaro_sessions')!);
+    const stored = getDataStore().sessions.findAll();
     expect(stored).toHaveLength(0);
   });
 });

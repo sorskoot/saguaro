@@ -3,17 +3,19 @@ import { useTimer } from '../hooks/useTimer';
 import type { UseTimerOptions } from '../hooks/useTimer';
 import type { Session, SessionType, Task } from '../types';
 import TimerPage from './TimerPage';
+import { getDataStore } from '../services/db/DataStore';
+import { EventLogRepository } from '../services/EventLogRepository';
 
 vi.mock('../hooks/useTimer');
 
 const tasks: Task[] = [
-  { id: 'first', name: 'First task', color: '#e74c3c', estimatedPomodoros: 3, createdAt: '', archived: false },
-  { id: 'second', name: 'Second task', color: '#e74c3c', estimatedPomodoros: 6, createdAt: '', archived: false },
+  { id: 'first', name: 'First task', color: '#e74c3c', estimatedSpikes: 3, createdAt: '', state: 'open' },
+  { id: 'second', name: 'Second task', color: '#e74c3c', estimatedSpikes: 6, createdAt: '', state: 'open' },
 ];
 
 let onComplete: UseTimerOptions['onComplete'];
 
-function session(id: string, taskId: string | null, type: SessionType = 'work', completed = true): Session {
+function session(id: string, taskId: string | null, type: SessionType = 'spike', completed = true): Session {
   return { id, taskId, type, completed, startTime: '', endTime: completed ? '' : null };
 }
 
@@ -26,20 +28,20 @@ function expectDots(total: number, filled: number, scope = 'task') {
 
 beforeEach(() => {
   localStorage.clear();
-  localStorage.setItem('saguaro_tasks', JSON.stringify(tasks));
+  getDataStore().tasks.replaceAll(tasks);
   localStorage.setItem('saguaro:selectedTaskId', JSON.stringify('first'));
-  localStorage.setItem('saguaro_sessions', JSON.stringify([
+  getDataStore().sessions.replaceAll([
     session('one', 'first'),
     session('break', 'first', 'short-break'),
     session('long-break', 'first', 'long-break'),
-    session('unfinished', 'first', 'work', false),
+    session('unfinished', 'first', 'spike', false),
     session('other', 'second'),
     session('unassigned', null),
-  ]));
+  ]);
   vi.mocked(useTimer).mockImplementation((options) => {
     onComplete = options.onComplete;
     return {
-      secondsLeft: 1500, isRunning: false, mode: 'work', pomodoroCount: 5,
+      secondsLeft: 1500, isRunning: false, mode: 'spike', pomodoroCount: 5,
       start: vi.fn(), pause: vi.fn(), cancel: vi.fn(), reset: vi.fn(), skip: vi.fn(), changeMode: vi.fn(),
     };
   });
@@ -60,9 +62,9 @@ describe('TimerPage Spike circles', () => {
   });
 
   it('adds extra circles when completed sessions exceed the estimate', () => {
-    localStorage.setItem('saguaro_sessions', JSON.stringify(
+    getDataStore().sessions.replaceAll(
       Array.from({ length: 5 }, (_, i) => session(String(i), 'first')),
-    ));
+    );
     render(<TimerPage />);
     const dots = screen.getByRole('img', { name: '5 of 3 task Spikes completed, 2 over estimate' });
     expect(dots.children).toHaveLength(5);
@@ -75,14 +77,14 @@ describe('TimerPage Spike circles', () => {
   });
 
   it('shows empty circles when the task has no completed sessions', () => {
-    localStorage.removeItem('saguaro_sessions');
+    getDataStore().sessions.clear();
     render(<TimerPage />);
     expectDots(3, 0);
   });
 
   it('fills a circle on work completion and retains progress after remounting', () => {
     const { unmount } = render(<TimerPage />);
-    act(() => onComplete?.('work'));
+    act(() => onComplete?.('spike'));
     expectDots(3, 2);
     unmount();
     render(<TimerPage />);
@@ -97,6 +99,29 @@ describe('TimerPage Spike circles', () => {
 
   it('falls back to the cycle indicator for a deleted selected task', () => {
     localStorage.setItem('saguaro:selectedTaskId', JSON.stringify('deleted'));
+    render(<TimerPage />);
+    expectDots(4, 1, 'cycle');
+  });
+});
+
+describe('TimerPage event log', () => {
+  it('logs an interruption against the selected task', () => {
+    vi.mocked(useTimer).mockReturnValue({
+      secondsLeft: 1000, isRunning: true, mode: 'spike', pomodoroCount: 0,
+      start: vi.fn(), pause: vi.fn(), cancel: vi.fn(), reset: vi.fn(), skip: vi.fn(), changeMode: vi.fn(),
+    });
+    render(<TimerPage />);
+    fireEvent.click(screen.getByTitle('Note an interruption'));
+
+    expect(new EventLogRepository(getDataStore().events).findAll()).toMatchObject([
+      { type: 'interruption', sessionId: null, taskId: 'first' },
+    ]);
+  });
+
+  it('shows the timer cycle, not the task total, for a task without an estimate', () => {
+    const { estimatedSpikes: _estimate, ...unestimated } = tasks[0];
+    getDataStore().tasks.replaceAll([unestimated as Task]);
+    // The mocked timer reports 5 completed Spikes in its cycle; the task has 1 of its own.
     render(<TimerPage />);
     expectDots(4, 1, 'cycle');
   });

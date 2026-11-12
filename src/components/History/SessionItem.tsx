@@ -20,7 +20,7 @@ function formatTimeRange(isoStart: string, isoEnd: string | null): string {
 }
 
 export default function SessionItem({ session, taskName }: SessionItemProps) {
-  const isWork = session.type === 'work';
+  const isWork = session.type === 'spike';
   const icon = isWork ? '🌵' : '☕';
 
   return (

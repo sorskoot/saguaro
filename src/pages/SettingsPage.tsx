@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import type { ChangeEvent } from 'react';
 import { useSettings } from '../hooks/useSettings';
 import { useExport } from '../hooks/useExport';
+import { getDataStore } from '../services/db/DataStore';
 import { DurationField, ToggleField } from '../components/Settings';
 import styles from './SettingsPage.module.css';
 
@@ -10,7 +11,10 @@ export default function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { exportToFile, importFromFile } = useExport({
-    onSuccess: () => alert('Import successful! The page will reload to apply changes.'),
+    onSuccess: () => {
+      alert('Import successful! The page will reload to apply changes.');
+      window.location.reload();
+    },
     onError: (msg) => alert(`Import failed: ${msg}`),
   });
 
@@ -22,12 +26,13 @@ export default function SettingsPage() {
     e.target.value = '';
   }
 
-  function handleClearAll() {
+  async function handleClearAll() {
     if (
       window.confirm(
-        'Clear ALL data? This will permanently delete all sessions and tasks. This cannot be undone.',
+        'Clear ALL data? This will permanently delete all sessions, tasks and the event log. This cannot be undone.',
       )
     ) {
+      await getDataStore().clearAll();
       localStorage.clear();
       window.location.reload();
     }
@@ -42,11 +47,11 @@ export default function SettingsPage() {
         <h2 className={styles.sectionTitle}>Timer durations</h2>
         <div className={styles.fields}>
           <DurationField
-            label="Spike"
-            value={settings.workDuration}
+            label="Spike minimum"
+            value={settings.spikeMinimum}
             min={1}
             max={90}
-            onChange={(v) => updateSettings({ workDuration: v })}
+            onChange={(v) => updateSettings({ spikeMinimum: v })}
           />
           <DurationField
             label="Short break"
@@ -78,22 +83,10 @@ export default function SettingsPage() {
         <h2 className={styles.sectionTitle}>Behaviour</h2>
         <div className={styles.fields}>
           <ToggleField
-            label="Auto-start breaks"
-            description="Automatically start the break timer after a Spike ends."
-            checked={settings.autoStartBreaks}
-            onChange={(v) => updateSettings({ autoStartBreaks: v })}
-          />
-          <ToggleField
-            label="Auto-start Spikes"
-            description="Automatically start the next Spike after a break ends."
-            checked={settings.autoStartPomodoros}
-            onChange={(v) => updateSettings({ autoStartPomodoros: v })}
-          />
-          <ToggleField
-            label="Sound notifications"
-            description="Play a sound when a session completes."
-            checked={settings.soundEnabled}
-            onChange={(v) => updateSettings({ soundEnabled: v })}
+            label="Break-end chime"
+            description="Play a soft chime when a break ends."
+            checked={settings.breakEndChime}
+            onChange={(v) => updateSettings({ breakEndChime: v })}
           />
         </div>
       </section>
@@ -149,7 +142,7 @@ export default function SettingsPage() {
               Permanently delete all sessions, tasks, and settings. This cannot be undone.
             </p>
           </div>
-          <button className={styles.dangerBtn} type="button" onClick={handleClearAll}>
+          <button className={styles.dangerBtn} type="button" onClick={() => void handleClearAll()}>
             Clear all
           </button>
         </div>

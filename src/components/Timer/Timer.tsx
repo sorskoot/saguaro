@@ -10,7 +10,7 @@ interface TimerProps {
   isRunning: boolean;
   mode: SessionType;
   pomodoroCount: number;
-  estimatedPomodoros?: number;
+  estimatedSpikes?: number;
   interruptions?: number;
   onInterrupt?: () => void;
   onStart: () => void;
@@ -22,7 +22,7 @@ interface TimerProps {
 }
 
 const MODE_LABELS: Record<SessionType, string> = {
-  work: 'Spike',
+  spike: 'Spike',
   'short-break': 'Short Break',
   'long-break': 'Long Break',
 };
@@ -35,7 +35,7 @@ export default function Timer({
   isRunning,
   mode,
   pomodoroCount,
-  estimatedPomodoros,
+  estimatedSpikes,
   interruptions = 0,
   onInterrupt,
   onStart,
@@ -45,7 +45,7 @@ export default function Timer({
   onSkip,
 }: TimerProps) {
   const [confirmingCancel, setConfirmingCancel] = useState(false);
-  const canCancel = !!onCancel && mode === 'work';
+  const canCancel = !!onCancel && mode === 'spike';
   const showConfirm = confirmingCancel && isRunning && canCancel;
 
   // Drop a stale confirmation if the session stops or changes underneath it.
@@ -67,8 +67,8 @@ export default function Timer({
   const primaryLabel = !isRunning ? 'Start' : canCancel ? 'Cancel' : 'Pause';
 
   const progress = totalSeconds > 0 ? secondsLeft / totalSeconds : 0;
-  const plannedDots = estimatedPomodoros ?? DOTS_COUNT;
-  const isTaskScoped = estimatedPomodoros !== undefined;
+  const plannedDots = estimatedSpikes ?? DOTS_COUNT;
+  const isTaskScoped = estimatedSpikes !== undefined;
   // Sessions beyond the estimate get extra dots in a different colour.
   const extraDots = isTaskScoped ? Math.max(0, pomodoroCount - plannedDots) : 0;
   const dotsCount = plannedDots + extraDots;
@@ -113,11 +113,11 @@ export default function Timer({
         // Always rendered so switching modes doesn't change the vertical layout;
         // hidden (but still taking space) outside of Spike mode.
         <button
-          className={`${styles.interruptBtn} ${mode === 'work' ? '' : styles.interruptBtnHidden}`}
+          className={`${styles.interruptBtn} ${mode === 'spike' ? '' : styles.interruptBtnHidden}`}
           onClick={onInterrupt}
-          disabled={!isRunning || mode !== 'work'}
-          aria-hidden={mode !== 'work'}
-          tabIndex={mode === 'work' ? 0 : -1}
+          disabled={!isRunning || mode !== 'spike'}
+          aria-hidden={mode !== 'spike'}
+          tabIndex={mode === 'spike' ? 0 : -1}
           type="button"
           title="Note an interruption"
         >

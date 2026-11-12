@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { SettingsRepository } from '../services/SettingsRepository';
-import { getStorageService } from '../services/StorageService';
+import { getDataStore } from '../services/db/DataStore';
 import type { Settings } from '../types';
 
 export interface UseSettingsResult {
@@ -23,7 +23,7 @@ export interface UseSettingsResult {
 export function useSettings(): UseSettingsResult {
     const repoRef = useRef<SettingsRepository | null>(null);
     if (repoRef.current === null) {
-        repoRef.current = new SettingsRepository(getStorageService());
+        repoRef.current = new SettingsRepository(getDataStore().settings);
     }
     const repo = repoRef.current;
 

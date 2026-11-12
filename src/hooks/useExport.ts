@@ -1,6 +1,6 @@
 import { useRef, useCallback } from 'react';
 import { ExportService } from '../services/ExportService';
-import { getStorageService } from '../services/StorageService';
+import { getDataStore } from '../services/db/DataStore';
 
 export interface UseExportOptions {
     /** Called after a successful import operation. */
@@ -49,7 +49,7 @@ export function useExport({
 }: UseExportOptions = {}): UseExportResult {
     const serviceRef = useRef<ExportService | null>(null);
     if (serviceRef.current === null) {
-        serviceRef.current = new ExportService(getStorageService());
+        serviceRef.current = new ExportService(getDataStore());
     }
     const service = serviceRef.current;
 
@@ -72,10 +72,19 @@ export function useExport({
 
     const importFromFile = useCallback(
         async (file: File): Promise<void> => {
+            // Without storage an import would "succeed", then vanish on the reload that follows.
+            if (getDataStore().storageUnavailable) {
+                onError?.(
+                    'This browser is not letting Saguaro store data, so a backup cannot be restored.',
+                );
+                return;
+            }
             try {
                 const text = await file.text();
                 const parsed: unknown = JSON.parse(text);
-                service.importData(parsed);
+                await service.importData(parsed);
+                // The page reloads after a successful import, so make sure it is all saved first.
+                await getDataStore().flush();
                 onSuccess?.();
             } catch (err) {
                 const msg =

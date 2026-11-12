@@ -13,7 +13,7 @@ interface TaskItemProps {
   selected: boolean;
   onSelect: () => void;
   onEdit: () => void;
-  onArchive: () => void;
+  onDone: () => void;
   onDelete: () => void;
 }
 
@@ -23,20 +23,21 @@ export default function TaskItem({
   selected,
   onSelect,
   onEdit,
-  onArchive,
+  onDone,
   onDelete,
 }: TaskItemProps) {
   const link = toSafeHttpUrl(task.link);
+  const isDone = task.state === 'done';
 
   return (
     <div
-      className={`${styles.row} ${task.archived ? styles.archived : selected ? styles.selected : ''}`}
-      onClick={task.archived ? undefined : onSelect}
-      role={task.archived ? undefined : 'button'}
-      aria-pressed={task.archived ? undefined : selected}
-      tabIndex={task.archived ? undefined : 0}
+      className={`${styles.row} ${isDone ? styles.done : selected ? styles.selected : ''}`}
+      onClick={isDone ? undefined : onSelect}
+      role={isDone ? undefined : 'button'}
+      aria-pressed={isDone ? undefined : selected}
+      tabIndex={isDone ? undefined : 0}
       onKeyDown={(e) => {
-        if (!task.archived && e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+        if (!isDone && e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
           e.preventDefault();
           onSelect();
         }
@@ -50,7 +51,7 @@ export default function TaskItem({
       <div className={styles.info}>
         <span className={styles.name} title={task.name}>
           {task.name}
-          {task.archived && <span className={styles.archivedLabel}> (Archived)</span>}
+          {isDone && <span className={styles.doneLabel}> (Done)</span>}
         </span>
         {task.description && (
           <span className={styles.description} title={task.description}>
@@ -70,9 +71,11 @@ export default function TaskItem({
           </a>
         )}
       </div>
-      <span className={styles.estimate}>
-        {task.estimatedPomodoros} {task.estimatedPomodoros === 1 ? 'Spike' : 'Spikes'}
-      </span>
+      {task.estimatedSpikes !== undefined && (
+        <span className={styles.estimate}>
+          {task.estimatedSpikes} {task.estimatedSpikes === 1 ? 'Spike' : 'Spikes'}
+        </span>
+      )}
       <span className={styles.sessionCount}>
         {sessionCount} {sessionCount === 1 ? 'session' : 'sessions'}
       </span>
@@ -80,14 +83,14 @@ export default function TaskItem({
         <button className={styles.iconBtn} onClick={onEdit} type="button" title="Edit task">
           ✏️
         </button>
-        {!task.archived && (
+        {!isDone && (
           <button
             className={styles.iconBtn}
-            onClick={onArchive}
+            onClick={onDone}
             type="button"
-            title="Archive task"
+            title="Mark task as done"
           >
-            📦
+            ✅
           </button>
         )}
         <button

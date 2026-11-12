@@ -11,7 +11,7 @@ interface DailySummaryProps {
 const DEFAULT_WORK_MINUTES = 25;
 
 export default function DailySummary({ date, sessions }: DailySummaryProps) {
-  const completedWork = sessions.filter((s) => s.type === 'work' && s.completed);
+  const completedWork = sessions.filter((s) => s.type === 'spike' && s.completed);
   const totalFocusMinutes = completedWork.length * DEFAULT_WORK_MINUTES;
   const focusHours = Math.floor(totalFocusMinutes / 60);
   const focusMinutes = totalFocusMinutes % 60;

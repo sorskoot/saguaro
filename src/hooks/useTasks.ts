@@ -1,12 +1,13 @@
 import { useState, useRef, useCallback } from 'react';
 import { TaskRepository } from '../services/TaskRepository';
-import { getStorageService } from '../services/StorageService';
+import { getDataStore } from '../services/db/DataStore';
+import { logEvent } from '../services/eventLog';
 import { generateId } from '../utils/id';
-import type { Task, TaskDetails } from '../types';
+import type { Task, TaskDetails, TaskState } from '../types';
 
 export interface UseTasksResult {
     /**
-     * Non-archived tasks, or all tasks when includeArchived is enabled.
+     * Tasks that are not done, or all tasks when includeDone is enabled.
      */
     tasks: Task[];
 
@@ -14,13 +15,13 @@ export interface UseTasksResult {
      * Creates a new task and persists it.
      * @param name Task display name.
      * @param color Task color value.
-     * @param estimatedPomodoros Number of work sessions planned for the task.
+     * @param estimatedSpikes Number of Spikes planned for the task; undefined when not estimated.
      * @param details Optional description and link.
      */
     addTask: (
         name: string,
         color: string,
-        estimatedPomodoros: number,
+        estimatedSpikes: number | undefined,
         details?: TaskDetails,
     ) => Task;
 
@@ -32,10 +33,11 @@ export interface UseTasksResult {
     updateTask: (id: string, partial: Partial<Task>) => void;
 
     /**
-     * Marks a task as archived (soft delete). Archiving is reversible.
-     * @param id Task id to archive.
+     * Moves a task to the given state. Done tasks are hidden by default but can be reopened.
+     * @param id Task id to change.
+     * @param state The new state.
      */
-    archiveTask: (id: string) => void;
+    setTaskState: (id: string, state: TaskState) => void;
 
     /**
      * Permanently removes a task.
@@ -46,67 +48,89 @@ export interface UseTasksResult {
 
 /**
  * Manages tasks via {@link TaskRepository}.
- * Maintains an internal list of all tasks (including archived) and defaults to exposing active ones.
+ * Maintains an internal list of all tasks (including done) and defaults to exposing the ones still in play.
  */
-export function useTasks(includeArchived = false): UseTasksResult {
+export function useTasks(includeDone = false): UseTasksResult {
     const repoRef = useRef<TaskRepository | null>(null);
     if (repoRef.current === null) {
-        repoRef.current = new TaskRepository(getStorageService());
+        repoRef.current = new TaskRepository(getDataStore().tasks);
     }
     const repo = repoRef.current;
 
-    // allTasks holds every task (archived or not) so archiving is reversible.
+    // allTasks holds every task (done or not) so marking a task done is reversible.
     const [allTasks, setAllTasks] = useState<Task[]>(() =>
         repo.findAll(),
     );
 
-    const tasks = includeArchived ? allTasks : allTasks.filter((task) => !task.archived);
+    const tasks = includeDone ? allTasks : allTasks.filter((task) => task.state !== 'done');
 
     const addTask = useCallback(
-        (name: string, color: string, estimatedPomodoros: number, details?: TaskDetails) => {
+        (name: string, color: string, estimatedSpikes: number | undefined, details?: TaskDetails) => {
             const task: Task = {
                 id: generateId(),
                 name,
                 color,
-                estimatedPomodoros,
+                state: 'open',
+                ...(estimatedSpikes !== undefined ? { estimatedSpikes } : {}),
                 ...(details?.description ? { description: details.description } : {}),
                 ...(details?.link ? { link: details.link } : {}),
                 createdAt: new Date().toISOString(),
-                archived: false,
             };
             repo.save(task);
+            logEvent({
+                type: 'task-state-change',
+                taskId: task.id,
+                from: null,
+                to: task.state,
+                source: 'user',
+            });
             setAllTasks((prev) => [...prev, task]);
             return task;
         },
         [repo],
     );
 
+    // Persisting and logging happen outside the state updater: React may run
+    // updaters twice (StrictMode), which would write every event twice.
     const updateTask = useCallback(
         (id: string, partial: Partial<Task>) => {
-            setAllTasks((prev) => {
-                const existing = prev.find((task) => task.id === id);
-                const updated: Task = existing
-                    ? { ...existing, ...partial, id }
-                    : ({ ...partial, id } as Task);
-                repo.save(updated);
-                return existing
+            const existing = repo.findById(id);
+            const updated: Task = existing
+                ? { ...existing, ...partial, id }
+                : ({ ...partial, id } as Task);
+            repo.save(updated);
+            if (updated.state !== existing?.state) {
+                logEvent({
+                    type: 'task-state-change',
+                    taskId: id,
+                    from: existing?.state ?? null,
+                    to: updated.state,
+                    source: 'user',
+                });
+            }
+            setAllTasks((prev) =>
+                prev.some((task) => task.id === id)
                     ? prev.map((task) => (task.id === id ? updated : task))
-                    : [...prev, updated];
-            });
+                    : [...prev, updated],
+            );
         },
         [repo],
     );
 
-    const archiveTask = useCallback(
-        (id: string) => {
-            setAllTasks((prev) => {
-                return prev.map((task) => {
-                    if (task.id !== id) return task;
-                    const updated = { ...task, archived: true };
-                    repo.save(updated);
-                    return updated;
-                });
+    const setTaskState = useCallback(
+        (id: string, state: TaskState) => {
+            const existing = repo.findById(id);
+            if (!existing || existing.state === state) return;
+            const updated: Task = { ...existing, state };
+            repo.save(updated);
+            logEvent({
+                type: 'task-state-change',
+                taskId: id,
+                from: existing.state,
+                to: state,
+                source: 'user',
             });
+            setAllTasks((prev) => prev.map((task) => (task.id === id ? updated : task)));
         },
         [repo],
     );
@@ -123,7 +147,7 @@ export function useTasks(includeArchived = false): UseTasksResult {
         tasks,
         addTask,
         updateTask,
-        archiveTask,
+        setTaskState,
         deleteTask,
     };
 }

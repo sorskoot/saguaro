@@ -7,16 +7,16 @@ const task: Task = {
   id: 't1',
   name: 'Write report',
   color: '#00ff00',
-  estimatedPomodoros: 4,
+  estimatedSpikes: 4,
   createdAt: '2026-11-01T00:00:00.000Z',
-  archived: false,
+  state: 'open',
 };
 
 function session(over: Partial<Session>): Session {
   return {
     id: Math.random().toString(),
     taskId: 't1',
-    type: 'work',
+    type: 'spike',
     startTime: '2026-11-07T10:00:00.000Z',
     endTime: '2026-11-07T10:25:00.000Z',
     completed: true,
