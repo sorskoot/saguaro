@@ -47,13 +47,12 @@ class MockNotification {
 
 // 1-minute sessions → exactly 60 ticks to reach zero; fast to drive manually.
 const FAST_SETTINGS: Settings = {
-    workDuration: 1,
+    spikeMinimum: 1,
     shortBreakDuration: 1,
     longBreakDuration: 1,
     longBreakInterval: 4,
-    autoStartBreaks: false,
-    autoStartPomodoros: false,
-    soundEnabled: false,
+    breakEndChime: false,
+    bridgePairingCode: null,
 };
 
 /**
@@ -101,69 +100,44 @@ describe('useTimer — auto-start closure regression', () => {
         expect(cb).not.toBeUndefined();
     });
 
-    it('when autoStartBreaks is true and a work session completes, timerService.start receives a valid function for the break', () => {
+    it('does not auto-start the break after a Spike completes', () => {
         vi.stubGlobal('Worker', undefined as unknown as typeof Worker);
 
-        const settings: Settings = { ...FAST_SETTINGS, autoStartBreaks: true };
-        const { result } = renderHook(() => useTimer({ settings }));
+        const { result } = renderHook(() => useTimer({ settings: FAST_SETTINGS }));
 
         act(() => {
             result.current.start();
         });
 
-        // Capture tick and note seconds remaining before any ticks run.
         const tick = vi.mocked(timerService.start).mock.calls[0][0];
-        expect(typeof tick).toBe('function');
+        driveTicksToCompletion(tick, result.current.secondsLeft);
 
-        const initialSeconds = result.current.secondsLeft; // 60 with FAST_SETTINGS
-
-        // Drive every tick; zero-crossing triggers advanceMode(true) → auto-start.
-        driveTicksToCompletion(tick, initialSeconds);
-
-        // advanceMode(true) must have called timerService.start a second time.
-        expect(timerService.start).toHaveBeenCalledTimes(2);
-
-        const autoStartCb = vi.mocked(timerService.start).mock.calls[1][0];
-        expect(typeof autoStartCb).toBe('function');
-        expect(autoStartCb).not.toBeNull();
-        expect(autoStartCb).not.toBeUndefined();
+        // The break is waiting, not running: the next session starts by choice.
+        expect(timerService.start).toHaveBeenCalledTimes(1);
+        expect(result.current.mode).toBe('short-break');
+        expect(result.current.isRunning).toBe(false);
     });
 
-    it('when autoStartPomodoros is true and a break session completes, timerService.start receives a valid function for the next pomodoro', () => {
+    it('does not auto-start the next Spike after a break completes', () => {
         vi.stubGlobal('Worker', undefined as unknown as typeof Worker);
 
-        const settings: Settings = {
-            ...FAST_SETTINGS,
-            autoStartPomodoros: true,
-        };
-        const { result } = renderHook(() => useTimer({ settings }));
+        const { result } = renderHook(() => useTimer({ settings: FAST_SETTINGS }));
 
-        // Skip to short-break without triggering any auto-start side-effects.
         act(() => {
             result.current.skip();
         });
         expect(result.current.mode).toBe('short-break');
 
-        // Start the break session; isRunning() returns false from the mock.
         act(() => {
             result.current.start();
         });
 
         const tick = vi.mocked(timerService.start).mock.calls[0][0];
-        expect(typeof tick).toBe('function');
+        driveTicksToCompletion(tick, result.current.secondsLeft);
 
-        const initialSeconds = result.current.secondsLeft; // 60 for short-break
-
-        // Drive all break ticks; completing a break with autoStartPomodoros=true
-        // must call timerService.start again with a valid wrapper function.
-        driveTicksToCompletion(tick, initialSeconds);
-
-        expect(timerService.start).toHaveBeenCalledTimes(2);
-
-        const autoStartCb = vi.mocked(timerService.start).mock.calls[1][0];
-        expect(typeof autoStartCb).toBe('function');
-        expect(autoStartCb).not.toBeNull();
-        expect(autoStartCb).not.toBeUndefined();
+        expect(timerService.start).toHaveBeenCalledTimes(1);
+        expect(result.current.mode).toBe('spike');
+        expect(result.current.isRunning).toBe(false);
     });
 
     it('handles worker complete event and advances mode', () => {
@@ -186,7 +160,7 @@ describe('useTimer — auto-start closure regression', () => {
         });
 
         expect(onComplete).toHaveBeenCalledTimes(1);
-        expect(onComplete).toHaveBeenCalledWith('work');
+        expect(onComplete).toHaveBeenCalledWith('spike');
         expect(result.current.mode).toBe('short-break');
         expect(result.current.isRunning).toBe(false);
     });

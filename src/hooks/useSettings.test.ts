@@ -18,29 +18,29 @@ describe('useSettings', () => {
     const { result } = renderHook(() => useSettings());
 
     act(() => {
-      result.current.updateSettings({ workDuration: 30 });
+      result.current.updateSettings({ spikeMinimum: 30 });
     });
 
     // Merged value is reflected in state.
-    expect(result.current.settings.workDuration).toBe(30);
+    expect(result.current.settings.spikeMinimum).toBe(30);
     // All other fields are unchanged.
     expect(result.current.settings.shortBreakDuration).toBe(DEFAULT_SETTINGS.shortBreakDuration);
-    expect(result.current.settings.soundEnabled).toBe(DEFAULT_SETTINGS.soundEnabled);
+    expect(result.current.settings.breakEndChime).toBe(DEFAULT_SETTINGS.breakEndChime);
 
     // Value was persisted to localStorage by the repository.
     const stored = JSON.parse(localStorage.getItem('saguaro_settings')!);
-    expect(stored.workDuration).toBe(30);
+    expect(stored.spikeMinimum).toBe(30);
   });
 
   it('re-loading the hook reads persisted settings from storage', () => {
     // Pre-populate localStorage as if a previous session had saved settings.
     localStorage.setItem(
       'saguaro_settings',
-      JSON.stringify({ ...DEFAULT_SETTINGS, workDuration: 45 }),
+      JSON.stringify({ ...DEFAULT_SETTINGS, spikeMinimum: 45 }),
     );
 
     const { result } = renderHook(() => useSettings());
-    expect(result.current.settings.workDuration).toBe(45);
+    expect(result.current.settings.spikeMinimum).toBe(45);
     // Fields not in the stored object fall back to defaults.
     expect(result.current.settings.shortBreakDuration).toBe(DEFAULT_SETTINGS.shortBreakDuration);
   });

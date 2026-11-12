@@ -22,8 +22,8 @@ describe('useTasks', () => {
     const task = result.current.tasks[0];
     expect(task.name).toBe('My task');
     expect(task.color).toBe('#ff0000');
-    expect(task.estimatedPomodoros).toBe(3);
-    expect(task.archived).toBe(false);
+    expect(task.estimatedSpikes).toBe(3);
+    expect(task.state).toBe('open');
     expect(typeof task.id).toBe('string');
     expect(task.id.length).toBeGreaterThan(0);
     expect(typeof task.createdAt).toBe('string');
@@ -48,7 +48,7 @@ describe('useTasks', () => {
     expect(withoutDetails).not.toHaveProperty('link');
   });
 
-  it('archiveTask removes the task from the returned list but keeps it in storage', () => {
+  it('setTaskState to done removes the task from the returned list but keeps it in storage', () => {
     const { result } = renderHook(() => useTasks());
 
     act(() => {
@@ -57,34 +57,34 @@ describe('useTasks', () => {
     const id = result.current.tasks[0].id;
 
     act(() => {
-      result.current.archiveTask(id);
+      result.current.setTaskState(id, 'done');
     });
 
     expect(result.current.tasks).toHaveLength(0);
-    const stored: Array<{ id: string; archived: boolean }> = JSON.parse(
+    const stored: Array<{ id: string; state: string }> = JSON.parse(
       localStorage.getItem('saguaro_tasks')!,
     );
     expect(stored).toHaveLength(1);
-    expect(stored[0].archived).toBe(true);
+    expect(stored[0].state).toBe('done');
   });
 
-  it('includes archived tasks on request and filters them again when disabled', () => {
+  it('includes done tasks on request and filters them again when disabled', () => {
     const { result, rerender } = renderHook(
-      ({ includeArchived }) => useTasks(includeArchived),
-      { initialProps: { includeArchived: false } },
+      ({ includeDone }) => useTasks(includeDone),
+      { initialProps: { includeDone: false } },
     );
     act(() => {
       result.current.addTask('My task', '#ff0000', 1);
     });
     const id = result.current.tasks[0].id;
     act(() => {
-      result.current.archiveTask(id);
+      result.current.setTaskState(id, 'done');
     });
     expect(result.current.tasks).toHaveLength(0);
-    rerender({ includeArchived: true });
+    rerender({ includeDone: true });
     expect(result.current.tasks).toHaveLength(1);
-    expect(result.current.tasks[0].archived).toBe(true);
-    rerender({ includeArchived: false });
+    expect(result.current.tasks[0].state).toBe('done');
+    rerender({ includeDone: false });
     expect(result.current.tasks).toHaveLength(0);
   });
 
@@ -121,9 +121,9 @@ describe('useTasks', () => {
     expect(result.current.tasks[0].color).toBe('#ff0000');
 
     act(() => {
-      result.current.updateTask(id, { estimatedPomodoros: 5 });
+      result.current.updateTask(id, { estimatedSpikes: 5 });
     });
 
-    expect(result.current.tasks[0].estimatedPomodoros).toBe(5);
+    expect(result.current.tasks[0].estimatedSpikes).toBe(5);
   });
 });

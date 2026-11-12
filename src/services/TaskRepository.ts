@@ -8,24 +8,23 @@ export class TaskRepository implements IRepository<Task> {
   constructor(private readonly storage: IStorageService) {}
 
   private normalize(tasks: Task[]): Task[] {
-    return tasks.map((task) => ({
-      ...task,
-      estimatedPomodoros:
-        Number.isInteger(task.estimatedPomodoros) && task.estimatedPomodoros > 0
-          ? task.estimatedPomodoros
-          : 1,
-    }));
+    return tasks.map((task) => {
+      const { estimatedSpikes, ...rest } = task;
+      return {
+        ...rest,
+        state: task.state ?? 'open',
+        ...(Number.isInteger(estimatedSpikes) && (estimatedSpikes as number) > 0
+          ? { estimatedSpikes }
+          : {}),
+      };
+    });
   }
 
   private load(): Task[] {
     const tasks = this.storage.get<Task[]>(TASKS_KEY);
     if (tasks !== null) {
       const normalizedTasks = this.normalize(tasks);
-      if (
-        normalizedTasks.some(
-          (task, index) => task.estimatedPomodoros !== tasks[index].estimatedPomodoros,
-        )
-      ) {
+      if (JSON.stringify(normalizedTasks) !== JSON.stringify(tasks)) {
         this.persist(normalizedTasks);
       }
       return normalizedTasks;

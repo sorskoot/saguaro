@@ -7,13 +7,13 @@ import TimerPage from './TimerPage';
 vi.mock('../hooks/useTimer');
 
 const tasks: Task[] = [
-  { id: 'first', name: 'First task', color: '#e74c3c', estimatedPomodoros: 3, createdAt: '', archived: false },
-  { id: 'second', name: 'Second task', color: '#e74c3c', estimatedPomodoros: 6, createdAt: '', archived: false },
+  { id: 'first', name: 'First task', color: '#e74c3c', estimatedSpikes: 3, createdAt: '', state: 'open' },
+  { id: 'second', name: 'Second task', color: '#e74c3c', estimatedSpikes: 6, createdAt: '', state: 'open' },
 ];
 
 let onComplete: UseTimerOptions['onComplete'];
 
-function session(id: string, taskId: string | null, type: SessionType = 'work', completed = true): Session {
+function session(id: string, taskId: string | null, type: SessionType = 'spike', completed = true): Session {
   return { id, taskId, type, completed, startTime: '', endTime: completed ? '' : null };
 }
 
@@ -32,14 +32,14 @@ beforeEach(() => {
     session('one', 'first'),
     session('break', 'first', 'short-break'),
     session('long-break', 'first', 'long-break'),
-    session('unfinished', 'first', 'work', false),
+    session('unfinished', 'first', 'spike', false),
     session('other', 'second'),
     session('unassigned', null),
   ]));
   vi.mocked(useTimer).mockImplementation((options) => {
     onComplete = options.onComplete;
     return {
-      secondsLeft: 1500, isRunning: false, mode: 'work', pomodoroCount: 5,
+      secondsLeft: 1500, isRunning: false, mode: 'spike', pomodoroCount: 5,
       start: vi.fn(), pause: vi.fn(), cancel: vi.fn(), reset: vi.fn(), skip: vi.fn(), changeMode: vi.fn(),
     };
   });
@@ -82,7 +82,7 @@ describe('TimerPage Spike circles', () => {
 
   it('fills a circle on work completion and retains progress after remounting', () => {
     const { unmount } = render(<TimerPage />);
-    act(() => onComplete?.('work'));
+    act(() => onComplete?.('spike'));
     expectDots(3, 2);
     unmount();
     render(<TimerPage />);

@@ -21,7 +21,7 @@
   letter-spacing: -0.02em;
 }
 
-.archiveToggle {
+.doneToggle {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -32,7 +32,7 @@
   cursor: pointer;
 }
 
-.archiveToggle input {
+.doneToggle input {
   accent-color: var(--color-work);
 }
 

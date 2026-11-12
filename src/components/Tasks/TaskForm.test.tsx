@@ -33,7 +33,7 @@ describe('TaskForm', () => {
     });
     fireEvent.submit(container.querySelector('form')!);
 
-    expect(onSubmit).toHaveBeenCalledWith('Fix bug', '#8c8442', 1, {
+    expect(onSubmit).toHaveBeenCalledWith('Fix bug', '#8c8442', undefined, {
       description: 'Crash on start',
       link: 'https://github.com/sorskoot/saguaro/issues/1',
     });
@@ -67,7 +67,7 @@ describe('TaskForm', () => {
   it('prefills the estimate when editing a task', () => {
     render(
       <TaskForm
-        initial={{ name: 'Write tests', estimatedPomodoros: 3 }}
+        initial={{ name: 'Write tests', estimatedSpikes: 3 }}
         onSubmit={vi.fn()}
       />,
     );

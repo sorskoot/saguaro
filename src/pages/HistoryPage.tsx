@@ -6,7 +6,7 @@ import { isSameDay } from '../utils/time';
 import type { Session } from '../types';
 import styles from './HistoryPage.module.css';
 
-type FilterMode = 'all' | 'work' | string;
+type FilterMode = 'all' | 'spike' | string;
 
 interface DayGroup {
   dateIso: string;
@@ -46,17 +46,17 @@ export default function HistoryPage() {
 
   const filteredSessions = useMemo(() => {
     if (filter === 'all') return sessions;
-    if (filter === 'work') return sessions.filter((s) => s.type === 'work');
+    if (filter === 'spike') return sessions.filter((s) => s.type === 'spike');
     return sessions.filter((session) => session.taskId === filter);
   }, [sessions, filter]);
 
   // Per-task totals: the selected task, or every task that has work sessions.
   const summaryTasks = useMemo(() => {
-    if (filter !== 'all' && filter !== 'work') {
+    if (filter !== 'all' && filter !== 'spike') {
       return tasks.filter((t) => t.id === filter);
     }
     const withWork = new Set(
-      sessions.filter((s) => s.type === 'work' && s.taskId).map((s) => s.taskId),
+      sessions.filter((s) => s.type === 'spike' && s.taskId).map((s) => s.taskId),
     );
     return tasks.filter((t) => withWork.has(t.id));
   }, [tasks, sessions, filter]);

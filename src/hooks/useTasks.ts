@@ -2,11 +2,11 @@ import { useState, useRef, useCallback } from 'react';
 import { TaskRepository } from '../services/TaskRepository';
 import { getStorageService } from '../services/StorageService';
 import { generateId } from '../utils/id';
-import type { Task, TaskDetails } from '../types';
+import type { Task, TaskDetails, TaskState } from '../types';
 
 export interface UseTasksResult {
     /**
-     * Non-archived tasks, or all tasks when includeArchived is enabled.
+     * Tasks that are not done, or all tasks when includeDone is enabled.
      */
     tasks: Task[];
 
@@ -14,13 +14,13 @@ export interface UseTasksResult {
      * Creates a new task and persists it.
      * @param name Task display name.
      * @param color Task color value.
-     * @param estimatedPomodoros Number of work sessions planned for the task.
+     * @param estimatedSpikes Number of Spikes planned for the task; undefined when not estimated.
      * @param details Optional description and link.
      */
     addTask: (
         name: string,
         color: string,
-        estimatedPomodoros: number,
+        estimatedSpikes: number | undefined,
         details?: TaskDetails,
     ) => Task;
 
@@ -32,10 +32,11 @@ export interface UseTasksResult {
     updateTask: (id: string, partial: Partial<Task>) => void;
 
     /**
-     * Marks a task as archived (soft delete). Archiving is reversible.
-     * @param id Task id to archive.
+     * Moves a task to the given state. Done tasks are hidden by default but can be reopened.
+     * @param id Task id to change.
+     * @param state The new state.
      */
-    archiveTask: (id: string) => void;
+    setTaskState: (id: string, state: TaskState) => void;
 
     /**
      * Permanently removes a task.
@@ -46,33 +47,33 @@ export interface UseTasksResult {
 
 /**
  * Manages tasks via {@link TaskRepository}.
- * Maintains an internal list of all tasks (including archived) and defaults to exposing active ones.
+ * Maintains an internal list of all tasks (including done) and defaults to exposing the ones still in play.
  */
-export function useTasks(includeArchived = false): UseTasksResult {
+export function useTasks(includeDone = false): UseTasksResult {
     const repoRef = useRef<TaskRepository | null>(null);
     if (repoRef.current === null) {
         repoRef.current = new TaskRepository(getStorageService());
     }
     const repo = repoRef.current;
 
-    // allTasks holds every task (archived or not) so archiving is reversible.
+    // allTasks holds every task (done or not) so marking a task done is reversible.
     const [allTasks, setAllTasks] = useState<Task[]>(() =>
         repo.findAll(),
     );
 
-    const tasks = includeArchived ? allTasks : allTasks.filter((task) => !task.archived);
+    const tasks = includeDone ? allTasks : allTasks.filter((task) => task.state !== 'done');
 
     const addTask = useCallback(
-        (name: string, color: string, estimatedPomodoros: number, details?: TaskDetails) => {
+        (name: string, color: string, estimatedSpikes: number | undefined, details?: TaskDetails) => {
             const task: Task = {
                 id: generateId(),
                 name,
                 color,
-                estimatedPomodoros,
+                state: 'open',
+                ...(estimatedSpikes !== undefined ? { estimatedSpikes } : {}),
                 ...(details?.description ? { description: details.description } : {}),
                 ...(details?.link ? { link: details.link } : {}),
                 createdAt: new Date().toISOString(),
-                archived: false,
             };
             repo.save(task);
             setAllTasks((prev) => [...prev, task]);
@@ -97,12 +98,12 @@ export function useTasks(includeArchived = false): UseTasksResult {
         [repo],
     );
 
-    const archiveTask = useCallback(
-        (id: string) => {
+    const setTaskState = useCallback(
+        (id: string, state: TaskState) => {
             setAllTasks((prev) => {
                 return prev.map((task) => {
                     if (task.id !== id) return task;
-                    const updated = { ...task, archived: true };
+                    const updated = { ...task, state };
                     repo.save(updated);
                     return updated;
                 });
@@ -123,7 +124,7 @@ export function useTasks(includeArchived = false): UseTasksResult {
         tasks,
         addTask,
         updateTask,
-        archiveTask,
+        setTaskState,
         deleteTask,
     };
 }

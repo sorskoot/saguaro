@@ -6,7 +6,7 @@ const baseProps = {
   secondsLeft: 100,
   totalSeconds: 1500,
   isRunning: true,
-  mode: 'work' as const,
+  mode: 'spike' as const,
   pomodoroCount: 0,
   onStart: vi.fn(),
   onPause: vi.fn(),

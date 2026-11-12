@@ -27,7 +27,7 @@ export default function TaskSelector({ tasks, selectedId, onChange }: TaskSelect
       >
         <option value="">No Task</option>
         {tasks
-          .filter((task) => !task.archived)
+          .filter((task) => task.state !== 'done')
           .map((task) => (
             <option key={task.id} value={task.id} style={{ color: task.color }}>
               ■ {task.name}

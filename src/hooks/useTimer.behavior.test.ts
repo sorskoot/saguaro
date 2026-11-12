@@ -28,13 +28,12 @@ vi.mock('../utils/sound', () => ({ playBeep: vi.fn() }));
 
 // 1-minute durations → 60 ticks per session, fast to drive manually.
 const SHORT_SETTINGS: Settings = {
-  workDuration: 1,
+  spikeMinimum: 1,
   shortBreakDuration: 1,
   longBreakDuration: 1,
   longBreakInterval: 4,
-  autoStartBreaks: false,
-  autoStartPomodoros: false,
-  soundEnabled: true,
+  breakEndChime: true,
+  bridgePairingCode: null,
 };
 
 /**
@@ -72,11 +71,11 @@ beforeEach(() => {
 describe('useTimer — behavioral tests', () => {
   // ── 1. Initial state ───────────────────────────────────────────────────────
 
-  it('initial state: mode=work, secondsLeft=workDuration*60, isRunning=false, pomodoroCount=0', () => {
+  it('initial state: mode=work, secondsLeft=spikeMinimum*60, isRunning=false, pomodoroCount=0', () => {
     const { result } = renderHook(() => useTimer({ settings: DEFAULT_SETTINGS }));
 
-    expect(result.current.mode).toBe('work');
-    expect(result.current.secondsLeft).toBe(DEFAULT_SETTINGS.workDuration * 60);
+    expect(result.current.mode).toBe('spike');
+    expect(result.current.secondsLeft).toBe(DEFAULT_SETTINGS.spikeMinimum * 60);
     expect(result.current.isRunning).toBe(false);
     expect(result.current.pomodoroCount).toBe(0);
   });
@@ -116,11 +115,11 @@ describe('useTimer — behavioral tests', () => {
     const tick = startAndCaptureTick(result);
     act(() => { tick(); tick(); tick(); }); // 3 ticks → 57 seconds remaining
 
-    expect(result.current.secondsLeft).toBe(SHORT_SETTINGS.workDuration * 60 - 3);
+    expect(result.current.secondsLeft).toBe(SHORT_SETTINGS.spikeMinimum * 60 - 3);
 
     act(() => { result.current.reset(); });
 
-    expect(result.current.secondsLeft).toBe(SHORT_SETTINGS.workDuration * 60);
+    expect(result.current.secondsLeft).toBe(SHORT_SETTINGS.spikeMinimum * 60);
     expect(result.current.isRunning).toBe(false);
   });
 
@@ -129,7 +128,7 @@ describe('useTimer — behavioral tests', () => {
   it('skip() from work advances to short-break, increments pomodoroCount, and sets correct secondsLeft', () => {
     const { result } = renderHook(() => useTimer({ settings: SHORT_SETTINGS }));
 
-    expect(result.current.mode).toBe('work');
+    expect(result.current.mode).toBe('spike');
     expect(result.current.pomodoroCount).toBe(0);
 
     act(() => { result.current.skip(); });
@@ -158,7 +157,7 @@ describe('useTimer — behavioral tests', () => {
 
     // Short-break skipped → back to work.
     act(() => { result.current.skip(); });
-    expect(result.current.mode).toBe('work');
+    expect(result.current.mode).toBe('spike');
 
     // Cycle 2 — second work session skipped; should now produce a long-break.
     act(() => { result.current.skip(); });
@@ -193,25 +192,26 @@ describe('useTimer — behavioral tests', () => {
     driveToCompletion(tick, initialSeconds);
 
     expect(onComplete).toHaveBeenCalledTimes(1);
-    expect(onComplete).toHaveBeenCalledWith('work');
+    expect(onComplete).toHaveBeenCalledWith('spike');
   });
 
-  // ── 9. playBeep when soundEnabled ─────────────────────────────────────────
+  // ── 9. playBeep when breakEndChime ─────────────────────────────────────────
 
-  it('playBeep is called when soundEnabled is true and the timer completes', () => {
-    const settings: Settings = { ...SHORT_SETTINGS, soundEnabled: true };
+  it('playBeep is called when breakEndChime is true and a break completes', () => {
+    const settings: Settings = { ...SHORT_SETTINGS, breakEndChime: true };
     const { result } = renderHook(() => useTimer({ settings }));
 
+    act(() => {
+      result.current.changeMode('short-break');
+    });
     const tick = startAndCaptureTick(result);
     driveToCompletion(tick, result.current.secondsLeft);
 
     expect(playBeep).toHaveBeenCalledTimes(1);
   });
 
-  // ── 10. no playBeep when soundEnabled is false ────────────────────────────
-
-  it('playBeep is NOT called when soundEnabled is false and the timer completes', () => {
-    const settings: Settings = { ...SHORT_SETTINGS, soundEnabled: false };
+  it('playBeep is NOT called when a Spike completes, even with breakEndChime on', () => {
+    const settings: Settings = { ...SHORT_SETTINGS, breakEndChime: true };
     const { result } = renderHook(() => useTimer({ settings }));
 
     const tick = startAndCaptureTick(result);
@@ -220,22 +220,37 @@ describe('useTimer — behavioral tests', () => {
     expect(playBeep).not.toHaveBeenCalled();
   });
 
+  // ── 10. no playBeep when breakEndChime is false ────────────────────────────
+
+  it('playBeep is NOT called when breakEndChime is false and a break completes', () => {
+    const settings: Settings = { ...SHORT_SETTINGS, breakEndChime: false };
+    const { result } = renderHook(() => useTimer({ settings }));
+
+    act(() => {
+      result.current.changeMode('short-break');
+    });
+    const tick = startAndCaptureTick(result);
+    driveToCompletion(tick, result.current.secondsLeft);
+
+    expect(playBeep).not.toHaveBeenCalled();
+  });
+
   // ── 11. settings change while not running ─────────────────────────────────
 
-  it('changing workDuration while not running updates secondsLeft to the new duration', () => {
+  it('changing spikeMinimum while not running updates secondsLeft to the new duration', () => {
     const { result, rerender } = renderHook(
       ({ settings }: { settings: Settings }) => useTimer({ settings }),
       { initialProps: { settings: DEFAULT_SETTINGS } },
     );
 
-    expect(result.current.secondsLeft).toBe(DEFAULT_SETTINGS.workDuration * 60);
+    expect(result.current.secondsLeft).toBe(DEFAULT_SETTINGS.spikeMinimum * 60);
 
-    const updatedSettings: Settings = { ...DEFAULT_SETTINGS, workDuration: 30 };
+    const updatedSettings: Settings = { ...DEFAULT_SETTINGS, spikeMinimum: 30 };
     act(() => {
       rerender({ settings: updatedSettings });
     });
 
-    // The settings-change effect fires because workDuration dependency changed
+    // The settings-change effect fires because spikeMinimum dependency changed
     // and isRunning is false, so secondsLeft is updated to the new duration.
     expect(result.current.secondsLeft).toBe(30 * 60);
   });

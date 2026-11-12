@@ -25,7 +25,7 @@ function makeSession(id: string, overrides: Partial<Session> = {}): Session {
   return {
     id,
     taskId: null,
-    type: 'work',
+    type: 'spike',
     startTime: new Date().toISOString(),
     endTime: null,
     completed: false,

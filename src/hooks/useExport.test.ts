@@ -82,7 +82,7 @@ describe('useExport', () => {
       const onError = vi.fn();
       const { result } = renderHook(() => useExport({ onSuccess, onError }));
 
-      const data = makeAppData({ settings: { ...DEFAULT_SETTINGS, workDuration: 30 } });
+      const data = makeAppData({ settings: { ...DEFAULT_SETTINGS, spikeMinimum: 30 } });
       const file = makeFile(JSON.stringify(data));
 
       await act(async () => {
@@ -94,7 +94,7 @@ describe('useExport', () => {
 
       // ExportService.importData writes individual keys to localStorage.
       const stored = JSON.parse(localStorage.getItem('saguaro_settings')!);
-      expect(stored.workDuration).toBe(30);
+      expect(stored.spikeMinimum).toBe(30);
     });
 
     it('calls onError when the file contains invalid JSON', async () => {

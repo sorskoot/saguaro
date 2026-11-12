@@ -12,8 +12,8 @@ type FormState =
   | { mode: 'edit'; task: Task };
 
 export default function TasksPage() {
-  const [showArchived, setShowArchived] = useState(false);
-  const { tasks, addTask, updateTask, archiveTask, deleteTask } = useTasks(showArchived);
+  const [showDone, setShowDone] = useState(false);
+  const { tasks, addTask, updateTask, setTaskState, deleteTask } = useTasks(showDone);
   const { sessions } = useSessions();
   const { selectedTaskId, setSelectedTaskId } = useSelectedTask();
   const [formState, setFormState] = useState<FormState>({ mode: 'hidden' });
@@ -25,10 +25,10 @@ export default function TasksPage() {
   function handleAdd(
     name: string,
     color: string,
-    estimatedPomodoros: number,
+    estimatedSpikes: number | undefined,
     details: TaskDetails,
   ) {
-    const task = addTask(name, color, estimatedPomodoros, details);
+    const task = addTask(name, color, estimatedSpikes, details);
     setSelectedTaskId(task.id);
     setFormState({ mode: 'hidden' });
   }
@@ -37,22 +37,22 @@ export default function TasksPage() {
     task: Task,
     name: string,
     color: string,
-    estimatedPomodoros: number,
+    estimatedSpikes: number | undefined,
     details: TaskDetails,
   ) {
     updateTask(task.id, {
       name,
       color,
-      estimatedPomodoros,
+      estimatedSpikes,
       description: details.description,
       link: details.link,
     });
     setFormState({ mode: 'hidden' });
   }
 
-  function handleArchive(task: Task) {
-    if (window.confirm(`Archive "${task.name}"? It will be hidden from the task list.`)) {
-      archiveTask(task.id);
+  function handleDone(task: Task) {
+    if (window.confirm(`Mark "${task.name}" as done? It will be hidden from the task list.`)) {
+      setTaskState(task.id, 'done');
     }
   }
 
@@ -83,18 +83,18 @@ export default function TasksPage() {
         )}
       </div>
 
-      <label className={styles.archiveToggle}>
+      <label className={styles.doneToggle}>
         <input
           type="checkbox"
-          checked={showArchived}
+          checked={showDone}
           onChange={(event) => {
-            setShowArchived(event.target.checked);
-            if (!event.target.checked && formState.mode === 'edit' && formState.task.archived) {
+            setShowDone(event.target.checked);
+            if (!event.target.checked && formState.mode === 'edit' && formState.task.state === 'done') {
               setFormState({ mode: 'hidden' });
             }
           }}
         />
-        Show archived tasks
+        Show done tasks
       </label>
 
       {formState.mode === 'add' && (
@@ -114,8 +114,8 @@ export default function TasksPage() {
             {isEditing(task.id) ? (
               <TaskForm
                 initial={task}
-                onSubmit={(name, color, estimatedPomodoros, details) =>
-                  handleEdit(task, name, color, estimatedPomodoros, details)
+                onSubmit={(name, color, estimatedSpikes, details) =>
+                  handleEdit(task, name, color, estimatedSpikes, details)
                 }
                 onCancel={() => setFormState({ mode: 'hidden' })}
               />
@@ -126,7 +126,7 @@ export default function TasksPage() {
                 selected={task.id === selectedTaskId}
                 onSelect={() => setSelectedTaskId(task.id)}
                 onEdit={() => setFormState({ mode: 'edit', task })}
-                onArchive={() => handleArchive(task)}
+                onDone={() => handleDone(task)}
                 onDelete={() => handleDelete(task)}
               />
             )}

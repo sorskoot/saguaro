@@ -8,7 +8,7 @@ interface TaskFormProps {
   onSubmit: (
     name: string,
     color: string,
-    estimatedPomodoros: number,
+    estimatedSpikes: number | undefined,
     details: TaskDetails,
   ) => void;
   onCancel?: () => void;
@@ -19,8 +19,8 @@ const DEFAULT_COLOR = '#8c8442';
 export default function TaskForm({ initial, onSubmit, onCancel }: TaskFormProps) {
   const [name, setName] = useState(initial?.name ?? '');
   const [color, setColor] = useState(initial?.color ?? DEFAULT_COLOR);
-  const [estimatedPomodoros, setEstimatedPomodoros] = useState(
-    String(initial?.estimatedPomodoros ?? 1),
+  const [estimatedSpikes, setEstimatedSpikes] = useState(
+    initial?.estimatedSpikes !== undefined ? String(initial.estimatedSpikes) : '',
   );
   const [description, setDescription] = useState(initial?.description ?? '');
   const [link, setLink] = useState(initial?.link ?? '');
@@ -30,7 +30,7 @@ export default function TaskForm({ initial, onSubmit, onCancel }: TaskFormProps)
     if (!e.currentTarget.reportValidity()) return;
     const trimmed = name.trim();
     if (!trimmed) return;
-    onSubmit(trimmed, color, Number(estimatedPomodoros), {
+    onSubmit(trimmed, color, estimatedSpikes === '' ? undefined : Number(estimatedSpikes), {
       description: description.trim() || undefined,
       link: link.trim() || undefined,
     });
@@ -65,9 +65,9 @@ export default function TaskForm({ initial, onSubmit, onCancel }: TaskFormProps)
           type="number"
           min="1"
           step="1"
-          value={estimatedPomodoros}
-          onChange={(e) => setEstimatedPomodoros(e.target.value)}
-          required
+          placeholder="Optional"
+          value={estimatedSpikes}
+          onChange={(e) => setEstimatedSpikes(e.target.value)}
         />
       </div>
 

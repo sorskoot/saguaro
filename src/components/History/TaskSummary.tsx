@@ -16,7 +16,7 @@ export interface TaskStats {
 export function computeTaskStats(taskId: string, sessions: Session[]): TaskStats {
   const stats: TaskStats = { completed: 0, interruptions: 0, cancelled: 0 };
   for (const s of sessions) {
-    if (s.taskId !== taskId || s.type !== 'work') continue;
+    if (s.taskId !== taskId || s.type !== 'spike') continue;
     if (s.completed && !s.cancelled) stats.completed += 1;
     if (s.cancelled) stats.cancelled += 1;
     stats.interruptions += s.interruptions ?? 0;
@@ -26,7 +26,7 @@ export function computeTaskStats(taskId: string, sessions: Session[]): TaskStats
 
 export default function TaskSummary({ task, sessions }: TaskSummaryProps) {
   const { completed, interruptions, cancelled } = computeTaskStats(task.id, sessions);
-  const estimate = task.estimatedPomodoros;
+  const estimate = task.estimatedSpikes;
 
   return (
     <div className={styles.card} data-testid="task-summary">
@@ -38,7 +38,7 @@ export default function TaskSummary({ task, sessions }: TaskSummaryProps) {
         <div className={styles.stat}>
           <span className={styles.statValue}>
             {completed}
-            {estimate > 0 ? `/${estimate}` : ''}
+            {estimate !== undefined && estimate > 0 ? `/${estimate}` : ''}
           </span>
           <span className={styles.statLabel}>Spikes</span>
         </div>

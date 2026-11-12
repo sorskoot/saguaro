@@ -26,9 +26,9 @@ function makeTask(id: string, overrides: Partial<Task> = {}): Task {
     id,
     name: `Task ${id}`,
     color: '#ff0000',
-    estimatedPomodoros: 1,
+    estimatedSpikes: 1,
     createdAt: new Date().toISOString(),
-    archived: false,
+    state: 'open',
     ...overrides,
   };
 }
@@ -98,11 +98,22 @@ describe('TaskRepository', () => {
     expect(repo.findAll()).toHaveLength(1);
   });
 
-  it('fills in the estimate for existing tasks without one', () => {
-    const task = makeTask('t1', { estimatedPomodoros: undefined });
+  it('leaves tasks without an estimate unestimated', () => {
+    const task = makeTask('t1');
+    delete task.estimatedSpikes;
     storage.set('saguaro_tasks', [task]);
 
-    expect(repo.findAll()).toEqual([{ ...task, estimatedPomodoros: 1 }]);
-    expect(storage.get('saguaro_tasks')).toEqual([{ ...task, estimatedPomodoros: 1 }]);
+    const [loaded] = repo.findAll();
+    expect(loaded).toEqual(task);
+    expect(loaded).not.toHaveProperty('estimatedSpikes');
+  });
+
+  it('drops an invalid estimate and defaults a missing state to open', () => {
+    const { state: _state, ...legacy } = makeTask('t1', { estimatedSpikes: 0 });
+    storage.set('saguaro_tasks', [legacy]);
+
+    const [loaded] = repo.findAll();
+    expect(loaded).not.toHaveProperty('estimatedSpikes');
+    expect(loaded.state).toBe('open');
   });
 });

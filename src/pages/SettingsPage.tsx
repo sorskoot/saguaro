@@ -42,11 +42,11 @@ export default function SettingsPage() {
         <h2 className={styles.sectionTitle}>Timer durations</h2>
         <div className={styles.fields}>
           <DurationField
-            label="Spike"
-            value={settings.workDuration}
+            label="Spike minimum"
+            value={settings.spikeMinimum}
             min={1}
             max={90}
-            onChange={(v) => updateSettings({ workDuration: v })}
+            onChange={(v) => updateSettings({ spikeMinimum: v })}
           />
           <DurationField
             label="Short break"
@@ -78,22 +78,10 @@ export default function SettingsPage() {
         <h2 className={styles.sectionTitle}>Behaviour</h2>
         <div className={styles.fields}>
           <ToggleField
-            label="Auto-start breaks"
-            description="Automatically start the break timer after a Spike ends."
-            checked={settings.autoStartBreaks}
-            onChange={(v) => updateSettings({ autoStartBreaks: v })}
-          />
-          <ToggleField
-            label="Auto-start Spikes"
-            description="Automatically start the next Spike after a break ends."
-            checked={settings.autoStartPomodoros}
-            onChange={(v) => updateSettings({ autoStartPomodoros: v })}
-          />
-          <ToggleField
-            label="Sound notifications"
-            description="Play a sound when a session completes."
-            checked={settings.soundEnabled}
-            onChange={(v) => updateSettings({ soundEnabled: v })}
+            label="Break-end chime"
+            description="Play a soft chime when a break ends."
+            checked={settings.breakEndChime}
+            onChange={(v) => updateSettings({ breakEndChime: v })}
           />
         </div>
       </section>

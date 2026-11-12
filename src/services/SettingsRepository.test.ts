@@ -33,7 +33,7 @@ describe('SettingsRepository', () => {
 
   it('load() merges stored partial settings with defaults', () => {
     const storage = createMockStorage();
-    const partial: Partial<Settings> = { workDuration: 50, soundEnabled: false };
+    const partial: Partial<Settings> = { spikeMinimum: 50, breakEndChime: false };
     storage.set(SETTINGS_KEY, partial);
 
     const repo = new SettingsRepository(storage);
@@ -57,7 +57,7 @@ describe('SettingsRepository', () => {
     const storage = createMockStorage();
     const spy = vi.spyOn(storage, 'set');
     const repo = new SettingsRepository(storage);
-    const settings: Settings = { ...DEFAULT_SETTINGS, workDuration: 45 };
+    const settings: Settings = { ...DEFAULT_SETTINGS, spikeMinimum: 45 };
 
     repo.save(settings);
 
@@ -67,7 +67,7 @@ describe('SettingsRepository', () => {
   it('save() then load() round-trips correctly', () => {
     const storage = createMockStorage();
     const repo = new SettingsRepository(storage);
-    const settings: Settings = { ...DEFAULT_SETTINGS, longBreakDuration: 30, autoStartBreaks: true };
+    const settings: Settings = { ...DEFAULT_SETTINGS, longBreakDuration: 30, breakEndChime: false };
 
     repo.save(settings);
 

@@ -1,4 +1,4 @@
-export type WorkerMode = 'work' | 'short-break' | 'long-break';
+export type WorkerMode = 'spike' | 'short-break' | 'long-break';
 
 export type TimerWorkerCommand =
     | { type: 'start'; endAt: number }

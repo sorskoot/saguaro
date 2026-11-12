@@ -25,15 +25,15 @@ const sampleTask: Task = {
   id: 'task-1',
   name: 'Write tests',
   color: '#aabbcc',
-  estimatedPomodoros: 2,
+  estimatedSpikes: 2,
   createdAt: '2024-01-01T00:00:00.000Z',
-  archived: false,
+  state: 'open',
 };
 
 const sampleSession: Session = {
   id: 'sess-1',
   taskId: 'task-1',
-  type: 'work',
+  type: 'spike',
   startTime: '2024-01-01T09:00:00.000Z',
   endTime: '2024-01-01T09:25:00.000Z',
   completed: true,
@@ -41,7 +41,7 @@ const sampleSession: Session = {
 
 const sampleSettings: Settings = {
   ...DEFAULT_SETTINGS,
-  workDuration: 30,
+  spikeMinimum: 30,
 };
 
 describe('ExportService', () => {
