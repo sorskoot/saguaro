@@ -2,13 +2,17 @@ import { useState } from 'react';
 import { useTasks } from '../hooks/useTasks';
 import { useSessions } from '../hooks/useSessions';
 import { TaskForm, TaskItem } from '../components/Tasks';
-import type { Task, TaskDetails } from '../types';
+import { STATE_LABELS } from '../components/Tasks/TaskItem';
+import type { Task, TaskDetails, TaskState } from '../types';
 import styles from './TasksPage.module.css';
 
 type FormState =
   | { mode: 'hidden' }
   | { mode: 'add' }
   | { mode: 'edit'; task: Task };
+
+/** Needs you first, then what is in play, then the rest. */
+const GROUP_ORDER: readonly TaskState[] = ['focus', 'asking', 'ready', 'waiting', 'open', 'done'];
 
 export default function TasksPage() {
   const [showDone, setShowDone] = useState(false);
@@ -52,10 +56,15 @@ export default function TasksPage() {
     setFormState({ mode: 'hidden' });
   }
 
-  function handleDone(task: Task) {
-    if (window.confirm(`Mark "${task.name}" as done? It will be hidden from the task list.`)) {
-      setTaskState(task.id, 'done');
+  function handleSetState(task: Task, state: TaskState) {
+    if (state === task.state) return;
+    if (
+      state === 'done' &&
+      !window.confirm(`Mark "${task.name}" as done? It will be hidden from the task list.`)
+    ) {
+      return;
     }
+    setTaskState(task.id, state);
   }
 
   function handleDelete(task: Task) {
@@ -110,31 +119,40 @@ export default function TasksPage() {
         <p className={styles.empty}>No tasks yet. Add one to start tracking your work.</p>
       )}
 
-      <ul className={styles.list}>
-        {tasks.map((task) => (
-          <li key={task.id}>
-            {isEditing(task.id) ? (
-              <TaskForm
-                initial={task}
-                onSubmit={(name, color, estimatedSpikes, details) =>
-                  handleEdit(task, name, color, estimatedSpikes, details)
-                }
-                onCancel={() => setFormState({ mode: 'hidden' })}
-              />
-            ) : (
-              <TaskItem
-                task={task}
-                sessionCount={getSessionCount(task.id)}
-                selected={task.id === focusTaskId}
-                onSelect={() => setFocus(task.id)}
-                onEdit={() => setFormState({ mode: 'edit', task })}
-                onDone={() => handleDone(task)}
-                onDelete={() => handleDelete(task)}
-              />
-            )}
-          </li>
-        ))}
-      </ul>
+      {GROUP_ORDER.map((state) => {
+        const group = tasks.filter((task) => task.state === state);
+        if (group.length === 0) return null;
+        return (
+          <section key={state} className={styles.group} aria-labelledby={`group-${state}`}>
+            <h2 id={`group-${state}`} className={styles.groupTitle}>
+              {STATE_LABELS[state]} <span className={styles.groupCount}>{group.length}</span>
+            </h2>
+            <ul className={styles.list}>
+              {group.map((task) => (
+                <li key={task.id}>
+                  {isEditing(task.id) ? (
+                    <TaskForm
+                      initial={task}
+                      onSubmit={(name, color, estimatedSpikes, details) =>
+                        handleEdit(task, name, color, estimatedSpikes, details)
+                      }
+                      onCancel={() => setFormState({ mode: 'hidden' })}
+                    />
+                  ) : (
+                    <TaskItem
+                      task={task}
+                      sessionCount={getSessionCount(task.id)}
+                      onSetState={(next) => handleSetState(task, next)}
+                      onEdit={() => setFormState({ mode: 'edit', task })}
+                      onDelete={() => handleDelete(task)}
+                    />
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        );
+      })}
     </div>
   );
 }

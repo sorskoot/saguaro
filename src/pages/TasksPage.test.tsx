@@ -96,24 +96,20 @@ describe('TasksPage done tasks', () => {
     expect(screen.getByText('Done task')).toBeInTheDocument();
   });
 
-  it('does not allow selecting or marking done again an done task', () => {
-    getDataStore().tasks.save({ ...tasks[0], state: 'focus' });
+  it('lets a done task be reopened with one tap', () => {
     render(<TasksPage />);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Show done tasks' }));
     const row = screen.getByText('Done task').closest('li')!;
-    expect(within(row).queryByTitle('Mark task as done')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByText('Done task'));
-    fireEvent.keyDown(screen.getByText('Done task').parentElement!, { key: 'Enter' });
-    expect(getDataStore().tasks.findById('done')?.state).toBe('done');
-    fireEvent.click(screen.getByRole('button', { name: /Active task/ }));
-    expect(screen.getByRole('button', { name: /Active task/ })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(within(row).getByRole('button', { name: 'Open' }));
+    expect(getDataStore().tasks.findById('done')?.state).toBe('open');
   });
 
   it('keeps an done task visible after marking it done while the option is enabled', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<TasksPage />);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Show done tasks' }));
-    fireEvent.click(screen.getByTitle('Mark task as done'));
+    const activeRow = screen.getByText('Active task').closest('li')!;
+    fireEvent.click(within(activeRow).getByRole('button', { name: 'Done' }));
     expect(screen.getByText('Active task')).toBeInTheDocument();
     expect(screen.getAllByText('(Done)')).toHaveLength(2);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Show done tasks' }));
@@ -128,5 +124,60 @@ describe('TasksPage done tasks', () => {
     fireEvent.click(within(row).getByTitle('Delete task'));
     expect(screen.queryByText('Done task')).not.toBeInTheDocument();
     expect(getDataStore().tasks.findAll()).toEqual([tasks[0]]);
+  });
+});
+
+describe('TasksPage states', () => {
+  const t = (id: string, state: Task['state']): Task => ({
+    id, name: `Task ${id}`, color: '#ff0000', createdAt: id, state,
+  });
+
+  function groupTitles() {
+    return screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent?.replace(/\d+$/, '').trim());
+  }
+
+  it('groups tasks by state, needing-you first, and hides empty groups', () => {
+    getDataStore().tasks.replaceAll([t('o', 'open'), t('w', 'waiting'), t('r', 'ready'), t('f', 'focus')]);
+    render(<TasksPage />);
+    expect(groupTitles()).toEqual(['Focus', 'Ready', 'Waiting', 'Open']);
+  });
+
+  it('moves a task to another state with one tap and logs it', () => {
+    getDataStore().tasks.replaceAll([t('o', 'open')]);
+    render(<TasksPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Waiting' }));
+    expect(getDataStore().tasks.findById('o')?.state).toBe('waiting');
+    expect(groupTitles()).toEqual(['Waiting']);
+  });
+
+  it('keeps exactly one Focus when another task is focused', () => {
+    getDataStore().tasks.replaceAll([t('a', 'focus'), t('b', 'open')]);
+    render(<TasksPage />);
+    const row = screen.getByText('Task b').closest('li')!;
+    fireEvent.click(within(row).getByRole('button', { name: 'Focus' }));
+
+    expect(getDataStore().tasks.findById('b')?.state).toBe('focus');
+    expect(getDataStore().tasks.findById('a')?.state).toBe('open');
+    expect(screen.getAllByRole('button', { name: 'Focus', pressed: true })).toHaveLength(1);
+  });
+
+  it('does not make a new task Focus when one already is', () => {
+    getDataStore().tasks.replaceAll([t('a', 'focus')]);
+    render(<TasksPage />);
+    fireEvent.click(screen.getByRole('button', { name: '+ Add Task' }));
+    fireEvent.change(screen.getByLabelText('Task name'), { target: { value: 'New one' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add Task' }));
+    const created = getDataStore().tasks.findAll().find((x) => x.name === 'New one')!;
+    expect(created.state).toBe('open');
+    expect(getDataStore().tasks.findById('a')?.state).toBe('focus');
+  });
+
+  it('gives a new task Focus when nothing has it', () => {
+    getDataStore().tasks.replaceAll([]);
+    render(<TasksPage />);
+    fireEvent.click(screen.getByRole('button', { name: '+ Add Task' }));
+    fireEvent.change(screen.getByLabelText('Task name'), { target: { value: 'First' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add Task' }));
+    expect(getDataStore().tasks.findAll()[0].state).toBe('focus');
   });
 });

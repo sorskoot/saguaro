@@ -64,6 +64,26 @@
   line-height: 1.7;
 }
 
+/* ─── State groups ────────────────────────────────────────── */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.groupTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.groupCount {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
 /* ─── Task list ───────────────────────────────────────────── */
 .list {
   list-style: none;

@@ -1,4 +1,4 @@
-import type { Task } from '../../types';
+import type { Task, TaskState } from '../../types';
 import { toSafeHttpUrl } from '../../utils/url';
 import styles from './TaskItem.module.css';
 
@@ -7,42 +7,39 @@ function formatLinkLabel(href: string): string {
   return href.replace(/^https?:\/\//, '').replace(/\/$/, '');
 }
 
+/** Display names for the states, in the order the one-tap buttons are shown. */
+export const STATE_LABELS: Record<TaskState, string> = {
+  focus: 'Focus',
+  open: 'Open',
+  waiting: 'Waiting',
+  asking: 'Asking',
+  ready: 'Ready',
+  done: 'Done',
+};
+
+const STATE_ORDER: readonly TaskState[] = ['focus', 'open', 'waiting', 'asking', 'ready', 'done'];
+
 interface TaskItemProps {
   task: Task;
   sessionCount: number;
-  selected: boolean;
-  onSelect: () => void;
+  onSetState: (state: TaskState) => void;
   onEdit: () => void;
-  onDone: () => void;
   onDelete: () => void;
 }
 
 export default function TaskItem({
   task,
   sessionCount,
-  selected,
-  onSelect,
+  onSetState,
   onEdit,
-  onDone,
   onDelete,
 }: TaskItemProps) {
   const link = toSafeHttpUrl(task.link);
   const isDone = task.state === 'done';
+  const isFocus = task.state === 'focus';
 
   return (
-    <div
-      className={`${styles.row} ${isDone ? styles.done : selected ? styles.selected : ''}`}
-      onClick={isDone ? undefined : onSelect}
-      role={isDone ? undefined : 'button'}
-      aria-pressed={isDone ? undefined : selected}
-      tabIndex={isDone ? undefined : 0}
-      onKeyDown={(e) => {
-        if (!isDone && e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
-    >
+    <div className={`${styles.row} ${isDone ? styles.done : isFocus ? styles.selected : ''}`}>
       <span
         className={styles.dot}
         style={{ backgroundColor: task.color }}
@@ -84,20 +81,10 @@ export default function TaskItem({
       <span className={styles.sessionCount}>
         {sessionCount} {sessionCount === 1 ? 'session' : 'sessions'}
       </span>
-      <div className={styles.actions} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.actions}>
         <button className={styles.iconBtn} onClick={onEdit} type="button" title="Edit task">
           ✏️
         </button>
-        {!isDone && (
-          <button
-            className={styles.iconBtn}
-            onClick={onDone}
-            type="button"
-            title="Mark task as done"
-          >
-            ✅
-          </button>
-        )}
         <button
           className={`${styles.iconBtn} ${styles.deleteBtn}`}
           onClick={onDelete}
@@ -106,6 +93,19 @@ export default function TaskItem({
         >
           🗑️
         </button>
+      </div>
+      <div className={styles.states} role="group" aria-label={`State of ${task.name}`}>
+        {STATE_ORDER.map((state) => (
+          <button
+            key={state}
+            className={`${styles.stateBtn} ${task.state === state ? styles.stateActive : ''}`}
+            type="button"
+            aria-pressed={task.state === state}
+            onClick={() => onSetState(state)}
+          >
+            {STATE_LABELS[state]}
+          </button>
+        ))}
       </div>
     </div>
   );
