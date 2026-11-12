@@ -71,6 +71,29 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   break is skipped.
 - The "session completed" notification and the notification permission prompt.
 
+### Added (task states UI)
+
+- The Tasks page groups tasks by state (Focus, Asking, Ready, Waiting, Open, Done;
+  empty groups are hidden). Every task has a button per state, so changing a state is
+  one tap. Done still asks first and can be reopened from **Show done tasks**.
+- Exactly one Focus task. Focusing a task moves the previous Focus to Open and logs the
+  state changes and one `focus-switch`; leaving Focus without picking another task is
+  logged as a switch to nothing.
+- A gentle, non-blocking note when more than 3 tasks are Waiting, Asking or Ready.
+- A skippable where-was-I prompt on the Tasks page when you leave Focus (not on the
+  timer page, so it never interrupts a Spike).
+- A task's summary shows under its name; its short code (`#k3`) shows only once a
+  bridge is paired.
+
+### Changed (task states UI)
+
+- Focus is now a task state owned by `useTasks` (`focusTaskId`, `setFocus`). The
+  separate `useSelectedTask` value is gone, along with its `saguaro:selectedTaskId`
+  localStorage key.
+- Clicking a task row no longer selects it; use its **Focus** button. A new task takes
+  Focus only when no task has it.
+- Changing a task's state by hand drops its old summary.
+
 ### Fixed
 
 - `useTimer`: `advanceMode` now uses `tickRef` to call the live `tick` function,

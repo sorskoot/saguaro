@@ -198,5 +198,8 @@ Agents are linked by **task code**. You tell the agent "working on #k3", or set 
 - *End early* is followed by a break like any other Spike; the break can be skipped.
 - The break's chime moves the rest screen to Re-entry; the break is only closed (and its overrun recorded) when the next Spike starts or Re-entry is dismissed.
 - Re-entry's *What happened* lists every task currently Ready or Asking.
-- Morning pick selects the Focus task; it does not change task states until the Task states UI lands.
+- Morning pick makes the tapped task the Focus task (the previous Focus moves to Open).
+- A new task takes Focus only when no task has it, so adding a task never pulls you off your work.
+- The where-was-I prompt on leaving Focus lives on the Tasks page only; switching tasks on the timer page never opens a prompt, so a Spike is not interrupted.
+- A manual state change clears the task's summary: a summary belongs to whoever last changed the state.
 - The global capture shortcut is `Ctrl/Cmd+Shift+Space` while the app or its Picture-in-Picture window has focus. Browsers can't register true OS-wide shortcuts.
