@@ -3,6 +3,7 @@ import { useTasks } from '../hooks/useTasks';
 import { useSessions } from '../hooks/useSessions';
 import { TaskForm, TaskItem } from '../components/Tasks';
 import { STATE_LABELS } from '../components/Tasks/TaskItem';
+import { countInPlay, exceedsSoftCap } from '../utils/softCap';
 import type { Task, TaskDetails, TaskState } from '../types';
 import styles from './TasksPage.module.css';
 
@@ -107,6 +108,13 @@ export default function TasksPage() {
         />
         Show done tasks
       </label>
+
+      {exceedsSoftCap(tasks) && (
+        <p className={styles.softCap} role="note">
+          {countInPlay(tasks)} tasks are waiting on something or someone. That is a lot to hold in
+          mind: maybe check in on one, or let one go.
+        </p>
+      )}
 
       {formState.mode === 'add' && (
         <TaskForm

@@ -180,4 +180,17 @@ describe('TasksPage states', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add Task' }));
     expect(getDataStore().tasks.findAll()[0].state).toBe('focus');
   });
+
+  it('shows a gentle note above the soft cap and never blocks', () => {
+    getDataStore().tasks.replaceAll([
+      t('1', 'waiting'), t('2', 'asking'), t('3', 'ready'), t('4', 'open'),
+    ]);
+    render(<TasksPage />);
+    expect(screen.queryByRole('note')).not.toBeInTheDocument();
+
+    fireEvent.click(within(screen.getByText('Task 4').closest('li')!).getByRole('button', { name: 'Waiting' }));
+    expect(screen.getByRole('note')).toHaveTextContent('4 tasks are waiting');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(getDataStore().tasks.findById('4')?.state).toBe('waiting');
+  });
 });
