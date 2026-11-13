@@ -203,14 +203,13 @@ export function useTimer({
         stopClock();
         startedAtRef.current = Date.now();
         setElapsedSeconds(0);
-        if (workerRef.current) {
-            workerRef.current.postMessage({
-                type: 'start',
-                startedAt: startedAtRef.current,
-            } satisfies TimerWorkerCommand);
-        } else {
-            timerService.start(syncFromClock);
-        }
+        workerRef.current?.postMessage({
+            type: 'start',
+            startedAt: startedAtRef.current,
+        } satisfies TimerWorkerCommand);
+        // The page's own interval always runs too: time comes from timestamps, so
+        // both sources agree, and the clock still moves if the worker never loads.
+        timerService.start(syncFromClock);
     }, [stopClock, setElapsedSeconds, syncFromClock]);
 
     /** Seconds since the session began, read from the clock rather than the last tick. */
