@@ -8,6 +8,8 @@ function createPipWindow() {
   const pipWindow = {
     document: pipDocument,
     addEventListener: events.addEventListener.bind(events),
+    removeEventListener: events.removeEventListener.bind(events),
+    dispatchEvent: events.dispatchEvent.bind(events),
     close: vi.fn(() => events.dispatchEvent(new Event('pagehide'))),
   };
   return pipWindow;
@@ -109,5 +111,36 @@ describe('TimerPictureInPicture', () => {
     await act(async () => resolveWindow(pipWindow));
     expect(pipWindow.close).toHaveBeenCalledOnce();
     expect(pipWindow.document.body).toBeEmptyDOMElement();
+  });
+  it('captures a thought from the floating window with the button or the shortcut', async () => {
+    const pipWindow = createPipWindow();
+    installApi(vi.fn().mockResolvedValue(pipWindow));
+    const onCapture = vi.fn();
+    render(<TimerPictureInPicture secondsLeft={1500} onCapture={onCapture} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Float timer' }));
+    const body = within(pipWindow.document.body);
+
+    fireEvent.click(await body.findByRole('button', { name: '+ Thought' }));
+    const input = body.getByRole('textbox', { name: 'Capture a thought' });
+    fireEvent.change(input, { target: { value: 'Call Sam' } });
+    fireEvent.submit(input.closest('form')!);
+    expect(onCapture).toHaveBeenCalledExactlyOnceWith('Call Sam');
+    expect(body.queryByRole('textbox')).not.toBeInTheDocument();
+
+    act(() => {
+      pipWindow.dispatchEvent(
+        new KeyboardEvent('keydown', { code: 'Space', ctrlKey: true, shiftKey: true }),
+      );
+    });
+    expect(await body.findByRole('textbox', { name: 'Capture a thought' })).toBeInTheDocument();
+  });
+
+  it('has no capture button without an onCapture handler', async () => {
+    const pipWindow = createPipWindow();
+    installApi(vi.fn().mockResolvedValue(pipWindow));
+    render(<TimerPictureInPicture secondsLeft={1500} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Float timer' }));
+    await within(pipWindow.document.body).findByRole('timer');
+    expect(within(pipWindow.document.body).queryByRole('button', { name: '+ Thought' })).toBeNull();
   });
 });

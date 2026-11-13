@@ -3,9 +3,13 @@ import { useTasks } from '../hooks/useTasks';
 import { useSessions } from '../hooks/useSessions';
 import { useSettings } from '../hooks/useSettings';
 import { TaskForm, TaskItem, WhereWasIPrompt } from '../components/Tasks';
+import ParkingLotList from '../components/ParkingLot/ParkingLotList';
+import { useParkingLot } from '../hooks/useParkingLot';
+import { taskFromThought } from '../utils/parkingLot';
 import { STATE_LABELS } from '../components/Tasks/TaskItem';
 import { countInPlay, exceedsSoftCap } from '../utils/softCap';
-import type { Task, TaskDetails, TaskState } from '../types';
+import { DEFAULT_TASK_COLOR } from '../types';
+import type { ParkingLotItem, Task, TaskDetails, TaskState } from '../types';
 import styles from './TasksPage.module.css';
 
 type FormState =
@@ -21,6 +25,7 @@ export default function TasksPage() {
   const { tasks, focusTaskId, setFocus, addTask, updateTask, setTaskState, deleteTask } =
     useTasks(showDone);
   const { sessions } = useSessions();
+  const { items: parkedThoughts, resolveItem } = useParkingLot();
   const { settings } = useSettings();
   const [formState, setFormState] = useState<FormState>({ mode: 'hidden' });
   // The task you just left Focus on, while the where-was-I prompt is open.
@@ -73,6 +78,12 @@ export default function TasksPage() {
     if (task.state === 'focus' && state !== 'done') setLeftFocusId(task.id);
     else if (state === 'focus' && focusTaskId !== null) setLeftFocusId(focusTaskId);
     setTaskState(task.id, state);
+  }
+
+  function handleMakeTask(item: ParkingLotItem) {
+    const { name, details } = taskFromThought(item.text);
+    const task = addTask(name, DEFAULT_TASK_COLOR, undefined, details);
+    resolveItem(item.id, 'promoted', task.id);
   }
 
   function handleDelete(task: Task) {
@@ -143,6 +154,13 @@ export default function TasksPage() {
           onCancel={() => setFormState({ mode: 'hidden' })}
         />
       )}
+
+      {/* Parked thoughts can be cleared here; this page is never open during a Spike or break. */}
+      <ParkingLotList
+        items={parkedThoughts}
+        onMakeTask={handleMakeTask}
+        onDismiss={(item) => resolveItem(item.id, 'dismissed')}
+      />
 
       {tasks.length === 0 && formState.mode !== 'add' && (
         <p className={styles.empty}>No tasks yet. Add one to start tracking your work.</p>

@@ -71,6 +71,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   break is skipped.
 - The "session completed" notification and the notification permission prompt.
 
+### Added (parking lot)
+
+- Capture a thought in a few seconds: `Ctrl/Cmd+Shift+Space` opens a one-line field in the
+  main window or in the floating timer window; Enter saves and closes it, Escape closes
+  without saving. No confirmation and no toast, so the screen looks the same afterwards.
+- A **+ Thought** button in the floating timer window opens the same field there.
+- Each capture logs a `capture` event, linked to the running Spike when there is one.
+- A plain parking-lot list on the Tasks page (never on screen during a Spike or break)
+  with *Make task* / *Dismiss*, so thoughts can be cleared without waiting for Re-entry.
+  Open lists refresh when a new thought is captured.
+
 ### Added (task states UI)
 
 - The Tasks page groups tasks by state (Focus, Asking, Ready, Waiting, Open, Done;

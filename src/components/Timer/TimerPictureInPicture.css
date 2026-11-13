@@ -37,3 +37,45 @@ body {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
+
+.floating-timer {
+  position: relative;
+}
+
+.floating-timer-capture-btn {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 3px 10px;
+  border: 1px solid #858372;
+  border-radius: 9999px;
+  background: transparent;
+  color: #B7B5A0;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.floating-timer-capture-btn:hover {
+  color: #E6E2C3;
+}
+
+.floating-timer-capture {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  margin: 0;
+}
+
+.floating-timer-capture-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #8C8442;
+  border-radius: 8px;
+  background: #2C332E;
+  color: #E6E2C3;
+  font: inherit;
+  font-size: 13px;
+}

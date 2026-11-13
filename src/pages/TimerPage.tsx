@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSettings } from '../hooks/useSettings';
 import { useTimer } from '../hooks/useTimer';
 import type { BreakType, SpikeEndInfo } from '../hooks/useTimer';
@@ -10,11 +10,11 @@ import TaskSelector from '../components/TaskSelector';
 import ReEntry from '../components/ReEntry';
 import { useParkingLot } from '../hooks/useParkingLot';
 import { DEFAULT_TASK_COLOR } from '../types';
+import { taskFromThought } from '../utils/parkingLot';
 import type { ParkingLotItem, Task } from '../types';
 import { logEvent } from '../services/eventLog';
+import { captureThought, setActiveSpikeSessionId } from '../services/parkingLotCapture';
 import styles from './TimerPage.module.css';
-
-const TASK_NAME_MAX = 80;
 
 interface ReEntryContainerProps {
   tasks: Task[];
@@ -37,13 +37,8 @@ function ReEntryContainer({
   const { items, resolveItem } = useParkingLot();
 
   const handleMakeTask = (item: ParkingLotItem) => {
-    const text = item.text.trim();
-    const task = addTask(
-      text.slice(0, TASK_NAME_MAX),
-      DEFAULT_TASK_COLOR,
-      undefined,
-      text.length > TASK_NAME_MAX ? { description: text } : undefined,
-    );
+    const { name, details } = taskFromThought(item.text);
+    const task = addTask(name, DEFAULT_TASK_COLOR, undefined, details);
     resolveItem(item.id, 'promoted', task.id);
   };
 
@@ -72,6 +67,9 @@ export default function TimerPage() {
   const spikeSessionIdRef = useRef<string | null>(null);
   const breakSessionIdRef = useRef<string | null>(null);
 
+  // A thought captured after leaving this page is no longer tied to a Spike.
+  useEffect(() => () => setActiveSpikeSessionId(null), []);
+
   const resetInterruptions = useCallback(() => {
     interruptionsRef.current = 0;
     setInterruptions(0);
@@ -90,6 +88,7 @@ export default function TimerPage() {
   const handleSpikeStart = useCallback(() => {
     resetInterruptions();
     spikeSessionIdRef.current = addSession('spike', selectedTaskId).id;
+    setActiveSpikeSessionId(spikeSessionIdRef.current);
   }, [addSession, selectedTaskId, resetInterruptions]);
 
   const handleSpikeEnd = useCallback(
@@ -103,6 +102,7 @@ export default function TimerPage() {
         });
       }
       spikeSessionIdRef.current = null;
+      setActiveSpikeSessionId(null);
       resetInterruptions();
     },
     [completeSession, resetInterruptions],
@@ -112,6 +112,7 @@ export default function TimerPage() {
     const id = spikeSessionIdRef.current;
     if (id) cancelSession(id, { interruptions: interruptionsRef.current });
     spikeSessionIdRef.current = null;
+    setActiveSpikeSessionId(null);
     resetInterruptions();
   }, [cancelSession, resetInterruptions]);
 
@@ -161,6 +162,7 @@ export default function TimerPage() {
       secondsLeft={timer.secondsLeft}
       overtimeSeconds={overtimeShown ? timer.overtimeSeconds : undefined}
       label={timer.mode === 'spike' ? 'Spike' : 'Break'}
+      onCapture={captureThought}
     />
   );
 

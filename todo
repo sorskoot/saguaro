@@ -27,6 +27,6 @@ ADHD / AI Driven Development:
     ✓ M2: Re-entry screen and Morning pick. @done(26-11-12 21:30)
     ✓ Task states UI: grouped by state, one Focus, one-tap changes, soft cap note. @done(26-11-12 23:30)
     ✓ Next action and "where was I" note per task (inputs); where-was-I prompt on leaving Focus. @done(26-11-12 23:30)
-    ☐ Parking lot for intrusive thoughts.
+    ✓ Parking lot for intrusive thoughts: shortcut, floating-timer button, list on the Tasks page. @done(26-11-13 21:00)
     ☐ Break-time review of Waiting tasks.
     ☐ Switch counter per sprint.

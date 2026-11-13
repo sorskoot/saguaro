@@ -15,6 +15,10 @@ tasks are Waiting, Asking or Ready; it never blocks anything. Enable **Show done
 done tasks, which can be reopened, edited or deleted. They remain hidden by default and in the
 timer's task selector.
 
+Park a passing thought without leaving your work: press `Ctrl/Cmd+Shift+Space` (in the app or the
+floating timer window, which also has a **+ Thought** button), type, and press Enter. Parked thoughts
+show at Re-entry and in a list on the Tasks page, where each can become a task or be dismissed.
+
 ## Data
 
 All data (tasks, sessions, settings, the event log and the parking lot) is stored in the browser's

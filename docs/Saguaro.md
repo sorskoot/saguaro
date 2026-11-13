@@ -98,7 +98,7 @@ The first time the app opens each day, it shows the open tasks with their *where
 
 - Text-only capture of side thoughts during a Spike: a global keyboard shortcut, a button in the Picture-in-Picture timer, or an agent via MCP.
 - Items persist across days until they're promoted to a task or dismissed.
-- They appear only at Re-entry, never during a Spike or a break.
+- They appear at Re-entry and in a plain list on the Tasks page, never during a Spike or a break.
 
 ## Growth
 
@@ -203,3 +203,5 @@ Agents are linked by **task code**. You tell the agent "working on #k3", or set 
 - The where-was-I prompt on leaving Focus lives on the Tasks page only; switching tasks on the timer page never opens a prompt, so a Spike is not interrupted.
 - A manual state change clears the task's summary: a summary belongs to whoever last changed the state.
 - The global capture shortcut is `Ctrl/Cmd+Shift+Space` while the app or its Picture-in-Picture window has focus. Browsers can't register true OS-wide shortcuts.
+- Capture is one field: Enter saves and closes, Escape closes without saving; blank text is ignored. A thought captured during a Spike is linked to that Spike's session; otherwise it has no session.
+- The parking lot is also browsable as a plain list on the Tasks page (D10 option A), which is never open during a Spike or break.
