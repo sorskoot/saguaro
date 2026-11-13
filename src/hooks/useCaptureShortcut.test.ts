@@ -36,4 +36,16 @@ describe('useCaptureShortcut', () => {
     press(window, { code: 'Space', ctrlKey: true, shiftKey: true });
     expect(onTrigger).not.toHaveBeenCalled();
   });
+  it('still fires when a focused element stops keydown propagation', () => {
+    const onTrigger = vi.fn();
+    renderHook(() => useCaptureShortcut(window, onTrigger));
+    const link = document.createElement('a');
+    link.addEventListener('keydown', (event) => event.stopPropagation());
+    document.body.append(link);
+    link.dispatchEvent(
+      new KeyboardEvent('keydown', { code: 'Space', ctrlKey: true, shiftKey: true, bubbles: true }),
+    );
+    link.remove();
+    expect(onTrigger).toHaveBeenCalledOnce();
+  });
 });

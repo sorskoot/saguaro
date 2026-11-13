@@ -23,7 +23,8 @@ export function useCaptureShortcut(target: EventTarget | null, onTrigger: () => 
       event.preventDefault();
       onTrigger();
     };
-    target.addEventListener('keydown', listener);
-    return () => target.removeEventListener('keydown', listener);
+    // Capture phase: controls that stop keydown propagation (e.g. a task link) must not block it.
+    target.addEventListener('keydown', listener, true);
+    return () => target.removeEventListener('keydown', listener, true);
   }, [target, onTrigger]);
 }
