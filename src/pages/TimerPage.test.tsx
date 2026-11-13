@@ -141,7 +141,8 @@ describe('TimerPage event log', () => {
   it('links a captured thought to the running Spike, and not after it ends', () => {
     render(<TimerPage />);
     act(() => options.onSpikeStart?.());
-    const sessionId = getDataStore().sessions.findAll().find((s) => !s.completed)!.id;
+    const [startEvent] = new EventLogRepository(getDataStore().events).findAll();
+    const sessionId = (startEvent as { sessionId: string }).sessionId;
     expect(captureThought('during')?.sessionId).toBe(sessionId);
 
     act(() => options.onSpikeEnd?.({ endedEarly: false, overtimeSeconds: 0 }));
