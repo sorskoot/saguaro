@@ -12,7 +12,7 @@ import { useParkingLot } from '../hooks/useParkingLot';
 import { DEFAULT_TASK_COLOR } from '../types';
 import type { ParkingLotItem, Task } from '../types';
 import { logEvent } from '../services/eventLog';
-import { setActiveSpikeSessionId } from '../services/parkingLotCapture';
+import { captureThought, setActiveSpikeSessionId } from '../services/parkingLotCapture';
 import styles from './TimerPage.module.css';
 
 const TASK_NAME_MAX = 80;
@@ -168,6 +168,7 @@ export default function TimerPage() {
       secondsLeft={timer.secondsLeft}
       overtimeSeconds={overtimeShown ? timer.overtimeSeconds : undefined}
       label={timer.mode === 'spike' ? 'Spike' : 'Break'}
+      onCapture={captureThought}
     />
   );
 
