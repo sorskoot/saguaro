@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSettings } from '../hooks/useSettings';
 import { useTimer } from '../hooks/useTimer';
 import type { BreakType, SpikeEndInfo } from '../hooks/useTimer';
@@ -12,6 +12,7 @@ import { useParkingLot } from '../hooks/useParkingLot';
 import { DEFAULT_TASK_COLOR } from '../types';
 import type { ParkingLotItem, Task } from '../types';
 import { logEvent } from '../services/eventLog';
+import { setActiveSpikeSessionId } from '../services/parkingLotCapture';
 import styles from './TimerPage.module.css';
 
 const TASK_NAME_MAX = 80;
@@ -72,6 +73,9 @@ export default function TimerPage() {
   const spikeSessionIdRef = useRef<string | null>(null);
   const breakSessionIdRef = useRef<string | null>(null);
 
+  // A thought captured after leaving this page is no longer tied to a Spike.
+  useEffect(() => () => setActiveSpikeSessionId(null), []);
+
   const resetInterruptions = useCallback(() => {
     interruptionsRef.current = 0;
     setInterruptions(0);
@@ -90,6 +94,7 @@ export default function TimerPage() {
   const handleSpikeStart = useCallback(() => {
     resetInterruptions();
     spikeSessionIdRef.current = addSession('spike', selectedTaskId).id;
+    setActiveSpikeSessionId(spikeSessionIdRef.current);
   }, [addSession, selectedTaskId, resetInterruptions]);
 
   const handleSpikeEnd = useCallback(
@@ -103,6 +108,7 @@ export default function TimerPage() {
         });
       }
       spikeSessionIdRef.current = null;
+      setActiveSpikeSessionId(null);
       resetInterruptions();
     },
     [completeSession, resetInterruptions],
@@ -112,6 +118,7 @@ export default function TimerPage() {
     const id = spikeSessionIdRef.current;
     if (id) cancelSession(id, { interruptions: interruptionsRef.current });
     spikeSessionIdRef.current = null;
+    setActiveSpikeSessionId(null);
     resetInterruptions();
   }, [cancelSession, resetInterruptions]);
 
