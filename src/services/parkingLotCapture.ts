@@ -4,6 +4,9 @@ import { logEvent } from './eventLog';
 import { generateId } from '../utils/id';
 import type { ParkingLotItem } from '../types';
 
+/** Dispatched on `window` after a thought is saved, so open lists can refresh. */
+export const CAPTURE_EVENT = 'saguaro:capture';
+
 /** The Spike that is running right now, so a captured thought can be linked to it. */
 let activeSpikeSessionId: string | null = null;
 
@@ -32,5 +35,6 @@ export function captureThought(text: string): ParkingLotItem | null {
   };
   new ParkingLotRepository(getDataStore().parkingLot).save(item);
   logEvent({ type: 'capture', itemId: item.id, sessionId: item.sessionId });
+  window.dispatchEvent(new Event(CAPTURE_EVENT));
   return item;
 }

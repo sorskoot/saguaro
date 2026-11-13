@@ -1,7 +1,8 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { ParkingLotRepository } from '../services/ParkingLotRepository';
 import { getDataStore } from '../services/db/DataStore';
 import { logEvent } from '../services/eventLog';
+import { CAPTURE_EVENT } from '../services/parkingLotCapture';
 import type { ParkingLotItem } from '../types';
 
 export interface UseParkingLotResult {
@@ -24,7 +25,7 @@ export interface UseParkingLotResult {
 /**
  * Reads the parking lot via {@link ParkingLotRepository}. Items are read when
  * the component mounts, so a screen that appears later (Re-entry) sees
- * everything captured so far.
+ * everything captured so far, and again whenever a new thought is captured.
  */
 export function useParkingLot(): UseParkingLotResult {
     const repoRef = useRef<ParkingLotRepository | null>(null);
@@ -34,6 +35,13 @@ export function useParkingLot(): UseParkingLotResult {
     const repo = repoRef.current;
 
     const [items, setItems] = useState<ParkingLotItem[]>(() => repo.findOpen());
+
+    // A thought captured while this list is on screen (shortcut) joins it.
+    useEffect(() => {
+        const refresh = () => setItems(repo.findOpen());
+        window.addEventListener(CAPTURE_EVENT, refresh);
+        return () => window.removeEventListener(CAPTURE_EVENT, refresh);
+    }, [repo]);
 
     // Persisting and logging happen outside the state updater: React may run
     // updaters twice (StrictMode), which would write every event twice.

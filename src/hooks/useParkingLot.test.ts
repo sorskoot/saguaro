@@ -2,6 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useParkingLot } from './useParkingLot';
 import { getDataStore } from '../services/db/DataStore';
 import { EventLogRepository } from '../services/EventLogRepository';
+import { captureThought } from '../services/parkingLotCapture';
 import type { ParkingLotItem } from '../types';
 
 function item(id: string, text: string, createdAt: string, extra: Partial<ParkingLotItem> = {}): ParkingLotItem {
@@ -20,6 +21,14 @@ describe('useParkingLot', () => {
     it('lists only unresolved items, oldest first', () => {
         const { result } = renderHook(() => useParkingLot());
         expect(result.current.items.map((i) => i.id)).toEqual(['a', 'b']);
+    });
+
+    it('picks up a thought captured while it is mounted', () => {
+        const { result } = renderHook(() => useParkingLot());
+        act(() => {
+            captureThought('Fresh idea');
+        });
+        expect(result.current.items.map((i) => i.text)).toEqual(['Reply to Sam', 'Look up flights', 'Fresh idea']);
     });
 
     it('marks an item promoted, links the task and logs it', () => {

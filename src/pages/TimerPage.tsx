@@ -10,12 +10,11 @@ import TaskSelector from '../components/TaskSelector';
 import ReEntry from '../components/ReEntry';
 import { useParkingLot } from '../hooks/useParkingLot';
 import { DEFAULT_TASK_COLOR } from '../types';
+import { taskFromThought } from '../utils/parkingLot';
 import type { ParkingLotItem, Task } from '../types';
 import { logEvent } from '../services/eventLog';
 import { captureThought, setActiveSpikeSessionId } from '../services/parkingLotCapture';
 import styles from './TimerPage.module.css';
-
-const TASK_NAME_MAX = 80;
 
 interface ReEntryContainerProps {
   tasks: Task[];
@@ -38,13 +37,8 @@ function ReEntryContainer({
   const { items, resolveItem } = useParkingLot();
 
   const handleMakeTask = (item: ParkingLotItem) => {
-    const text = item.text.trim();
-    const task = addTask(
-      text.slice(0, TASK_NAME_MAX),
-      DEFAULT_TASK_COLOR,
-      undefined,
-      text.length > TASK_NAME_MAX ? { description: text } : undefined,
-    );
+    const { name, details } = taskFromThought(item.text);
+    const task = addTask(name, DEFAULT_TASK_COLOR, undefined, details);
     resolveItem(item.id, 'promoted', task.id);
   };
 

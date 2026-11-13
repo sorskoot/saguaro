@@ -281,3 +281,49 @@ describe('TasksPage summary and code', () => {
     expect(screen.getByText('#k3')).toBeInTheDocument();
   });
 });
+
+describe('TasksPage parking lot', () => {
+  beforeEach(() => {
+    getDataStore().parkingLot.replaceAll([
+      { id: 'p1', text: 'Reply to Sam', createdAt: '2026-11-12T09:00:00Z', sessionId: null },
+      { id: 'p2', text: 'Look up flights', createdAt: '2026-11-12T09:05:00Z', sessionId: null },
+      { id: 'p3', text: 'Old one', createdAt: '', sessionId: null, resolution: 'dismissed' },
+    ]);
+  });
+
+  it('lists only open parked thoughts', () => {
+    render(<TasksPage />);
+    const list = screen.getByRole('region', { name: /Parking lot/ });
+    expect(within(list).getByText('Reply to Sam')).toBeInTheDocument();
+    expect(within(list).getByText('Look up flights')).toBeInTheDocument();
+    expect(within(list).queryByText('Old one')).toBeNull();
+  });
+
+  it('is absent when there is nothing parked', () => {
+    getDataStore().parkingLot.replaceAll([]);
+    render(<TasksPage />);
+    expect(screen.queryByRole('region', { name: /Parking lot/ })).toBeNull();
+  });
+
+  it('turns a thought into an Open task and resolves it', () => {
+    render(<TasksPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Make task: Reply to Sam' }));
+
+    const made = getDataStore().tasks.findAll().find((t) => t.name === 'Reply to Sam');
+    expect(made).toMatchObject({ state: 'open' });
+    expect(getDataStore().parkingLot.findById('p1')).toMatchObject({
+      resolution: 'promoted',
+      taskId: made?.id,
+    });
+    expect(screen.queryByRole('button', { name: 'Make task: Reply to Sam' })).toBeNull();
+  });
+
+  it('dismisses a thought without creating a task', () => {
+    render(<TasksPage />);
+    const before = getDataStore().tasks.findAll().length;
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss: Look up flights' }));
+
+    expect(getDataStore().parkingLot.findById('p2')).toMatchObject({ resolution: 'dismissed' });
+    expect(getDataStore().tasks.findAll()).toHaveLength(before);
+  });
+});
