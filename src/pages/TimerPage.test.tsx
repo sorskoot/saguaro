@@ -5,6 +5,7 @@ import type { Session, SessionType, Task } from '../types';
 import TimerPage from './TimerPage';
 import { getDataStore } from '../services/db/DataStore';
 import { EventLogRepository } from '../services/EventLogRepository';
+import { captureThought } from '../services/parkingLotCapture';
 
 vi.mock('../hooks/useTimer');
 
@@ -135,6 +136,16 @@ describe('TimerPage event log', () => {
     ]);
     const [start, interruption] = events;
     expect(interruption).toMatchObject({ sessionId: (start as { sessionId: string }).sessionId });
+  });
+
+  it('links a captured thought to the running Spike, and not after it ends', () => {
+    render(<TimerPage />);
+    act(() => options.onSpikeStart?.());
+    const sessionId = getDataStore().sessions.findAll().find((s) => !s.completed)!.id;
+    expect(captureThought('during')?.sessionId).toBe(sessionId);
+
+    act(() => options.onSpikeEnd?.({ endedEarly: false, overtimeSeconds: 0 }));
+    expect(captureThought('after')?.sessionId).toBeNull();
   });
 
   it('records the Spike when it starts, then its overtime and interruptions when it ends', () => {
