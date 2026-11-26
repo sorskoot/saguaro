@@ -30,3 +30,23 @@ ADHD / AI Driven Development:
     ✓ Parking lot for intrusive thoughts: shortcut, floating-timer button, list on the Tasks page. @done(26-11-13 21:00)
     ☐ Break-time review of Waiting tasks.
     ☐ Switch counter per sprint.
+    ☐ Growth: each completed Spike adds to today's saguaro.
+    ☐ Growth: every extra 5 minutes of overtime adds a spine or a flower.
+    ☐ Growth: show the Spikes spent on a task as small spines.
+    ☐ Metrics: overtime minutes per Spike and per day.
+    ☐ Metrics: partial Spikes (ended early).
+    ☐ Metrics: break overrun.
+    ☐ Metrics: switches per Spike (History only).
+    ☐ Metrics: time from Waiting to Ready per task.
+    ☐ Metrics: parking lot captures per Spike, promoted vs dismissed.
+    ☐ Bridge: saguaro-bridge npm workspace in /bridge, with a protocol.ts shared with the app.
+    ☐ Bridge: MCP stdio server with get_current_task, set_task_status, set_where_was_i and add_to_parking_lot.
+    ☐ Bridge: hook CLI (saguaro notify).
+    ☐ Bridge: WebSocket server on 127.0.0.1 with a replay queue for events sent while the app is closed.
+    ☐ Bridge: Origin check and one-time pairing; reject unpaired connections.
+    ☐ Bridge: link agents to tasks by task code.
+    ☐ Bridge: app connects as WebSocket client and updates open views live, including Re-entry.
+    ☐ Bridge: pairing in Settings behind a Connect an agent bridge link.
+    ☐ Bridge: quiet dot in the task list and floating timer for changes during a Spike.
+    ☐ Bridge: hold agent events and captures that arrive during a break until it ends.
+    ☐ Bridge: setup guide, including Chrome's local network access prompt.
